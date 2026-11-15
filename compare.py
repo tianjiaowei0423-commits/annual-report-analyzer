@@ -47,7 +47,13 @@ def main() -> None:
               f"pages {r['page_ok'].sum()}/{len(r)} correct")
         wrong = r[~r["value_ok"]]
         if not wrong.empty:
+            print("  Wrong values:")
             print(wrong[["metric", "value_truth", "value_model", "page_truth", "page_model", "note"]]
+                  .to_string(index=False))
+        page_only = r[r["value_ok"] & ~r["page_ok"]]
+        if not page_only.empty:
+            print("  Right value, different page:")
+            print(page_only[["metric", "value_model", "page_truth", "page_model"]]
                   .to_string(index=False))
 
     if results:

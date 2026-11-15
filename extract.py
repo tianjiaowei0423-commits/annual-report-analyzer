@@ -20,12 +20,15 @@ Usage:
 
 import argparse
 import json
+import logging
 import re
 from pathlib import Path
 
 import pandas as pd
 from dotenv import load_dotenv
 from pypdf import PdfReader
+
+logging.getLogger("pypdf").setLevel(logging.ERROR)  # hide font warnings
 
 MODEL = "claude-sonnet-5-5"
 YEAR = 2025
@@ -61,6 +64,7 @@ SECTIONS = {
     "income_statement": {
         "titles": ["income statement", "statement of profit or loss", "profit and loss"],
         "keys": ["profit for the year", "profit/loss for the year"],
+        "avoid_body": ["investing activities", "financing activities"],
         "labels": ["revenue", "ebitda", "ebit", "profit for the year", "operating profit",
                    "financial", "tax", "depreciation"],
     },
@@ -118,10 +122,20 @@ def is_parent_company_page(text: str) -> bool:
     return "parent company" in top or "cash pool" in text.lower()
 
 
+def squash(text: str) -> str:
+    """Lowercase and drop all whitespace, so 'In come statement' still matches."""
+    return re.sub(r"\s+", "", text.lower())
+
+
+def has_any(phrases: list[str], text: str) -> bool:
+    flat = squash(text)
+    return any(squash(p) in flat for p in phrases)
+
+
 def score_page(text: str, section: dict) -> float:
     lower = text.lower()
-    has_title = any(t in lower for t in section["titles"])
-    has_key = any(k in lower for k in section.get("keys", []))
+    has_title = has_any(section["titles"], text)
+    has_key = has_any(section.get("keys", []), text)
     if not (has_title or has_key):
         return 0.0
     score = 1.0
@@ -129,52 +143,50 @@ def score_page(text: str, section: dict) -> float:
         score += 3.0  # a line that only appears on the statement itself
     if section is SECTIONS.get("financial_items_note"):
         # several different interest lines = very likely the right note
-        score += 2.0 * sum(1 for k in section["keys"] if k in lower)
+        score += 2.0 * sum(1 for k in section["keys"] if has_any([k], text))
     # penalise only when the unwanted topic is the page heading (e.g. a pension note);
     # a passing mention inside the right note is fine
-    score -= 4.0 * sum(1 for a in section.get("avoid", []) if a in lower[:300])
-    if any(t in lower[:300] for t in section["titles"]):
+    score -= 4.0 * sum(1 for a in section.get("avoid", []) if has_any([a], text[:300]))
+    # content that belongs to a different statement anywhere on the page
+    score -= 6.0 * sum(1 for a in section.get("avoid_body", []) if has_any([a], text))
+    if has_any(section["titles"], text[:300]):
         score += 3.0  # title near the top = probably the heading of this page
     score += sum(1 for label in section["labels"] if label in lower)
     score += min(len(NUMBER_RE.findall(text)) / 40, 3.0)  # statement pages are dense with numbers
     # Table of contents mentions many sections at once: push it down.
     sections_named = sum(
-        any(t in lower for t in s["titles"]) for s in SECTIONS.values()
+        has_any(s["titles"], text) for s in SECTIONS.values()
     )
     if sections_named >= 4:
         score -= 4.0
     return score
 
 
+STATEMENT_SETS: list[int] = []  # filled by find_parent_start, shown in the dry run
+
+
 def find_parent_start(pages: list[str]) -> int:
     """Danish reports put the consolidated statements first and the parent company
-    statements later. If a second full income statement appears more than 20 pages
-    after the best one, treat everything from there on as parent company pages.
-    Returns the first parent company page index (len(pages) if none found)."""
-    section = SECTIONS["income_statement"]
-    candidates = []
-    for i, text in enumerate(pages):
-        lower = text.lower()
-        if any(t in lower[:300] for t in section["titles"]):
-            candidates.append((score_page(text, section), i))
-    if not candidates:
+    statements later. A statement set = a page with an income statement title and
+    a revenue line, followed within 1-3 pages by a page headed 'balance sheet' or
+    'statement of financial position'. The earliest set is the consolidated one;
+    the last set more than 20 pages later marks the parent company section.
+    Returns len(pages) if there is no second set."""
+    inc = SECTIONS["income_statement"]["titles"]
+    bs = SECTIONS["balance_sheet"]["titles"]
+
+    def bs_follows(i: int) -> bool:
+        return any(has_any(bs, pages[j][:300]) for j in range(i + 1, min(i + 4, len(pages))))
+
+    sets = [i for i, text in enumerate(pages)
+            if has_any(inc, text) and has_any(["revenue"], text) and bs_follows(i)]
+    STATEMENT_SETS[:] = sets
+    if not sets:
         return len(pages)
-    candidates.sort(key=lambda c: (-c[0], c[1]))  # best score, then earliest page
-    best = candidates[0][1]
-
-    # A real second set of statements is a full set: a cash flow statement
-    # follows within a few pages. A note that merely mentions "income statement"
-    # in its heading does not pass this test.
-    cf_titles = SECTIONS["cash_flow"]["titles"]
-
-    def starts_full_set(i: int) -> bool:
-        return any(
-            any(t in pages[j].lower()[:300] for t in cf_titles)
-            for j in range(i + 1, min(i + 9, len(pages)))
-        )
-
-    later = [i for _, i in candidates if i > best + 20 and starts_full_set(i)]
-    return min(later) - 1 if later else len(pages)  # -1: the divider page before it
+    # False matches can appear inside the consolidated notes, but the parent company
+    # statements are always the last part of the financial statements: take the last set.
+    later = [i for i in sets if i > sets[0] + 20]
+    return later[-1] - 1 if later else len(pages)  # -1: the divider page before it
 
 
 def locate_pages(pages: list[str]) -> tuple[dict[str, list[tuple[int, float]]], int]:
@@ -199,7 +211,25 @@ def locate_pages(pages: list[str]) -> tuple[dict[str, list[tuple[int, float]]], 
         scored.sort(key=lambda c: (-c[0], c[1]))
         return [(i, s) for s, i in scored[:n]]
 
-    found = {"income_statement": rank(SECTIONS["income_statement"], PAGES_PER_SECTION)}
+    # The income statement is followed within 1-3 pages by the balance sheet.
+    bs_titles = SECTIONS["balance_sheet"]["titles"]
+    before_bs = {i for i in usable
+                 if any(has_any(bs_titles, pages[j][:300])
+                        for j in range(i + 1, min(i + 4, len(pages))))}
+
+    def rank_income() -> list[tuple[int, float]]:
+        scored = []
+        for i in usable:
+            s = score_page(pages[i], SECTIONS["income_statement"])
+            if s <= 0:
+                continue
+            if i in before_bs:
+                s += 4.0
+            scored.append((s, i))
+        scored.sort(key=lambda c: (-c[0], c[1]))
+        return [(i, s) for s, i in scored[:PAGES_PER_SECTION]]
+
+    found = {"income_statement": rank_income()}
     anchor = found["income_statement"][0][0] if found["income_statement"] else None
     found["balance_sheet"] = rank(SECTIONS["balance_sheet"], PAGES_PER_SECTION, anchor)
     found["cash_flow"] = rank(SECTIONS["cash_flow"], PAGES_PER_SECTION, anchor)
@@ -328,6 +358,7 @@ def run(company: str, dry_run: bool) -> None:
     pages = read_pages(pdf_path)
     located, parent_start = locate_pages(pages)
 
+    print(f"Statement sets found at pages: {[i + 1 for i in STATEMENT_SETS]}")
     if parent_start < len(pages):
         print(f"Parent company section detected from p.{parent_start + 1}: skipped")
     print(f"{len(pages)} pages. Selected pages (PDF page numbers):")

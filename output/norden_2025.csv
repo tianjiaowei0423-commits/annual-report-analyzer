@@ -1,0 +1,15 @@
+company,year,metric,value,unit,currency,page,note
+Norden,2025,revenue,3125.7,million,USD,110,Revenue (income statement)
+Norden,2025,ebitda,454.3,million,USD,110,"Profit before depreciation, amortisation and impairment losses, etc. (EBITDA); now includes profit from sale of vessels"
+Norden,2025,ebit,158.4,million,USD,110,Profit from operations (EBIT)
+Norden,2025,net_profit,120.3,million,USD,110,Profit for the year; all attributable to owners
+Norden,2025,interest_expense,37.0,million,USD,143,Note 4.3: Interest expenses 2.7 + Interest expenses on lease liabilities 34.3 = 37.0
+Norden,2025,total_assets,2371.6,million,USD,111,TOTAL ASSETS
+Norden,2025,total_equity,1277.7,million,USD,111,Total equity (no non-controlling interests)
+Norden,2025,cash,382.1,million,USD,111,"Cash and cash equivalents, balance sheet"
+Norden,2025,total_borrowings,763.8,million,USD,111,Non-current borrowings 255.2 + lease liabilities 253.0 + current borrowings 50.1 + lease liabilities 205.5 = 763.8 (borrowings include financing lease borrowings)
+Norden,2025,net_interest_bearing_debt,381.7,million,USD,143,Note 4.2 Net interest-bearing debt total: 28.8 + 276.5 + 458.5 - 382.1 = 381.7
+Norden,2025,operating_cash_flow,378.2,million,USD,112,Cash flow from operating activities
+Norden,2025,capex,-630.1,million,USD,112,"Investments in assets, assets held for sale and other tangible assets -563.9 + Prepayments on vessels and newbuildings -66.2 = -630.1"
+Norden,2025,free_cash_flow,170.4,million,USD,112,Company-reported Free cash flow: OCF + investing CF + financing lease proceeds 177.0 - lease instalments 306.4 - interest paid 37.0 (deducts leases and interest). OCF + capex = 378.2 - 630.1 = -251.9
+Norden,2025,employees,473.0,count,,124,Average number of employees (FTEs) 2025
