@@ -1,0 +1,15 @@
+company,year,metric,value,unit,currency,page,note
+DFDS,2025,revenue,30947,million,DKK,122,Revenue (income statement); excludes Other income 119
+DFDS,2025,ebitda,3743,million,DKK,122,Operating profit before depreciation and amortisation (EBITDA)
+DFDS,2025,ebit,520,million,DKK,122,Operating profit (EBIT)
+DFDS,2025,net_profit,-425,million,DKK,122,Profit/loss for the year (incl. non-controlling interests of 2)
+DFDS,2025,interest_expense,792,million,DKK,164,"Note 4.4: Interest expense to banks, credit institutions, corporate bonds etc. 502 + Interest expense on lease liabilities 290; excludes FX, pension, other financial costs"
+DFDS,2025,total_assets,37117,million,DKK,123,Assets (balance sheet)
+DFDS,2025,total_equity,13447,million,DKK,123,Equity incl. non-controlling interests of 77
+DFDS,2025,cash,1795,million,DKK,123,Cash and cash equivalents (balance sheet)
+DFDS,2025,total_borrowings,17016,million,DKK,123,"Interest-bearing liabilities non-current 14,477 + current 2,539 (include lease liabilities 5,207)"
+DFDS,2025,net_interest_bearing_debt,15260,million,DKK,12,Net interest-bearing debt as reported in key figures (company-defined)
+DFDS,2025,operating_cash_flow,3300,million,DKK,126,Cash flows from operating activities
+DFDS,2025,capex,-1576,million,DKK,126,Investments in ferries incl. dockings -715 + other non-current tangible assets -766 + intangible assets -95; excludes sales and acquisitions
+DFDS,2025,free_cash_flow,2957,million,DKK,126,"Company-reported Free cash flow = operating CF 3,300 + investing CF -342 (includes asset sales; does not deduct lease payments). OCF + capex = 3,300 - 1,576 = 1,724"
+DFDS,2025,employees,16138,count,,12,Average number of employees (FTE)
