@@ -2,14 +2,14 @@ company,year,metric,value,unit,currency,page,note
 Maersk,2025,revenue,53988,million,USD,121,"Revenue, consolidated income statement"
 Maersk,2025,ebitda,9530,million,USD,121,"Profit before depreciation, amortisation and impairment losses, etc. (EBITDA)"
 Maersk,2025,ebit,3500,million,USD,121,Profit/loss before financial items (EBIT)
-Maersk,2025,net_profit,2915,million,USD,121,"Profit for the period (group total incl. NCI; A.P. Møller-Mærsk share 2,725)"
-Maersk,2025,interest_expense,1144,million,USD,133,"Interest expenses on liabilities (lease 728 + borrowings 298 = 1,026; line total 1,144 as reported), before capitalised borrowing costs 146 and interest income. Line label used: Interest expenses on liabilities"
+Maersk,2025,net_profit,2915,million,USD,121,"Profit for the period (group total incl. NCI; Maersk share 2,725)"
+Maersk,2025,interest_expense,1144,million,USD,133,"Interest expenses on liabilities 1,144 (lease 728 + borrowings 298 + other ~118), before capitalised borrowing costs of 146 and interest income; the line is the gross interest expense reported in note 2.5"
 Maersk,2025,total_assets,88352,million,USD,122,Total assets
-Maersk,2025,total_equity,56696,million,USD,122,"Total equity incl. NCI 1,115"
+Maersk,2025,total_equity,56696,million,USD,122,"Total equity incl. NCI of 1,115"
 Maersk,2025,cash,9042,million,USD,122,"Cash and bank balances (balance sheet); cash flow statement shows 9,008 net of overdrafts"
 Maersk,2025,total_borrowings,18920,million,USD,122,"Lease liabilities non-current 9,941 + current 3,076 + borrowings non-current 4,803 + current 1,100 = 18,920; matches page 129"
-Maersk,2025,net_interest_bearing_debt,-2947,million,USD,7,"Net interest-bearing debt as reported in five-year summary (net cash); company definition deducts cash, securities, interest-bearing receivables"
+Maersk,2025,net_interest_bearing_debt,-2947,million,USD,7,"Company-reported Net interest-bearing debt (net cash); deducts cash, securities and interest-bearing receivables"
 Maersk,2025,operating_cash_flow,9761,million,USD,123,Cash flow from operating activities
-Maersk,2025,capex,-4799,million,USD,123,"Purchase of intangible assets and property, plant and equipment (CAPEX)"
-Maersk,2025,free_cash_flow,2232,million,USD,7,"Company-reported FCF, deducts lease repayments (3,502) and lease interest (728) and capex, includes asset sale proceeds/dividends and net financial payments; OCF + capex = 9,761 - 4,799 = 4,962"
-Maersk,2025,employees,105030,count,,132,"Average number of employees (basis: average, as reported in note 2.2)"
+Maersk,2025,capex,-4799,million,USD,123,Purchase of intangible assets and PP&E (CAPEX)
+Maersk,2025,free_cash_flow,2232,million,USD,7,"Company-reported FCF; deducts lease repayments (3,502) and lease interest paid (728) and includes net financial payments, asset sale proceeds and dividends. OCF + capex = 9,761 - 4,799 = 4,962"
+Maersk,2025,employees,105030,count,,132,"Average number of employees (average basis, note 2.2)"

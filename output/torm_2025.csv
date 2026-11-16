@@ -1,0 +1,15 @@
+company,year,metric,value,unit,currency,page,note
+TORM,2025,revenue,1339.5,million,USD,153,"Revenue, consolidated income statement"
+TORM,2025,ebitda,570.8,million,USD,21,Group EBITDA USD 570.8m (financial review text); key figures page shows 571. Check: EBIT 356.3 + D&A 214.5 = 570.8
+TORM,2025,ebit,356.3,million,USD,153,Operating profit (EBIT)
+TORM,2025,net_profit,286.0,million,USD,153,Net profit for the year (incl. NCI 0.7)
+TORM,2025,interest_expense,69.1,million,USD,172,"Interest expenses on borrowings 68.3 + financial expenses from lease liabilities 0.8; excludes commitment fees, swaps, FX"
+TORM,2025,total_assets,3367.0,million,USD,154,TOTAL ASSETS
+TORM,2025,total_equity,2202.6,million,USD,154,Total equity (NCI is nil)
+TORM,2025,cash,163.5,million,USD,154,Cash and cash equivalents incl. restricted cash (balance sheet)
+TORM,2025,total_borrowings,1003.1,million,USD,154,"Borrowings non-current 714.3 + current 288.8; lease liabilities are included in borrowings (note 11,19)"
+TORM,2025,net_interest_bearing_debt,848.0,million,USD,6,"Net interest-bearing debt (company APM, key figures, rounded to USDm)"
+TORM,2025,operating_cash_flow,498.9,million,USD,157,Net cash flow from operating activities
+TORM,2025,capex,-310.3,million,USD,157,Investment in tangible fixed assets -308.5 + intangible -1.8
+TORM,2025,free_cash_flow,346.0,million,USD,6,"Company-reported Free cash flow (key figures, rounded). OCF 498.9 + capex -310.3 = 188.6 for comparability; TORM's definition differs (includes sale proceeds, lease etc.)"
+TORM,2025,employees,634.0,count,,169,Average number of permanent employees (FTE basis): seafarers 105 + land-based 529

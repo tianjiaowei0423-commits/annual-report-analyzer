@@ -14,7 +14,7 @@ Steps:
 Usage:
   python extract.py DFDS --dry-run   # only show which pages would be sent (free)
   python extract.py DFDS             # run the extraction (calls the API)
-  python extract.py all              # all three companies
+  python extract.py all              # every company in COMPANIES
   python extract.py DFDS --show-page 123   # debug one page (free)
 """
 
@@ -40,6 +40,7 @@ COMPANIES = {
     "DFDS": {"file": "dfds_2025.pdf", "currency": "DKK"},
     "Maersk": {"file": "maersk_2025.pdf", "currency": "USD"},
     "Norden": {"file": "norden_2025.pdf", "currency": "USD"},
+    "TORM": {"file": "torm_2025.pdf", "currency": "USD"},
 }
 
 METRICS = {
@@ -62,6 +63,7 @@ METRICS = {
 # Each section: words that appear in its heading, and line items expected on the page.
 SECTIONS = {
     "income_statement": {
+        "primary": True,  # a main statement, never a note page
         "titles": ["income statement", "statement of profit or loss", "profit and loss"],
         "keys": ["profit for the year", "profit/loss for the year"],
         "avoid_body": ["investing activities", "financing activities"],
@@ -69,12 +71,14 @@ SECTIONS = {
                    "financial", "tax", "depreciation"],
     },
     "balance_sheet": {
+        "primary": True,
         "titles": ["balance sheet", "statement of financial position"],
         "keys": ["total assets", "total equity and liabilities", "equity and liabilities"],
         "labels": ["total assets", "equity", "cash and cash equivalents", "lease liabilities",
                    "borrowings", "liabilities", "property, plant and equipment", "assets"],
     },
     "cash_flow": {
+        "primary": True,
         "titles": ["cash flow statement", "statement of cash flows", "cash flows"],
         "keys": ["cash flow from operating activities", "cash flows from operating activities"],
         "labels": ["operating activities", "investing activities", "financing activities",
@@ -102,6 +106,11 @@ SECTIONS = {
 PAGES_PER_SECTION = 2
 MAX_CHARS_PER_PAGE = 6000
 NUMBER_RE = re.compile(r"\(?-?\d[\d,.]*\)?")
+# A note heading at the start of a line, e.g. "NOTE 3 – SEGMENT", "Note 2.1: Revenue",
+# "NOTE 3 — continued". The dash/colon after the number keeps the "Note 2025 2024"
+# column header of a main statement from matching.
+NOTE_HEADING_RE = re.compile(r"(?im)^\s*note\s+\d{1,2}(\.\d{1,2})?\s*[–—:-]")
+NOTE_PENALTY = 8.0
 
 
 # ---------------------------------------------------------------- 1. read PDF
@@ -122,6 +131,13 @@ def is_parent_company_page(text: str) -> bool:
     return "parent company" in top or "cash pool" in text.lower()
 
 
+def is_note_page(text: str) -> bool:
+    """True if a note heading appears near the top of the page. Notes can repeat the
+    line items of a main statement (e.g. a segment balance sheet), so they must not
+    win the income statement / balance sheet / cash flow slots."""
+    return bool(NOTE_HEADING_RE.search(text[:300]))
+
+
 def squash(text: str) -> str:
     """Lowercase and drop all whitespace, so 'In come statement' still matches."""
     return re.sub(r"\s+", "", text.lower())
@@ -139,6 +155,8 @@ def score_page(text: str, section: dict) -> float:
     if not (has_title or has_key):
         return 0.0
     score = 1.0
+    if section.get("primary") and is_note_page(text):
+        score -= NOTE_PENALTY
     if has_key:
         score += 3.0  # a line that only appears on the statement itself
     if section is SECTIONS.get("financial_items_note"):
@@ -392,6 +410,7 @@ def show_page(company: str, page_no: int) -> None:
                  if w in lower]
         print(f"  {name:<22} {score_page(text, section):5.1f}  {words}")
     print(f"  parent company page?   {is_parent_company_page(text)}")
+    print(f"  note page?             {is_note_page(text)}")
 
 
 def main() -> None:
