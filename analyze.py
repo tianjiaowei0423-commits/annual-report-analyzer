@@ -1,15 +1,18 @@
 """
 Annual report analyzer - step 2: ratios and peer comparison.
 
-Reads the extracted metrics (output/<company>_2025.csv), turns them into ratios,
-and puts all companies side by side.
+Reads the extracted metrics (output/<company>_<year>.csv), turns them into ratios,
+and puts all companies side by side. If the prior year has been extracted too
+(python extract.py all --year 2024), it also shows how each ratio changed.
 
 Usage:
   python analyze.py            # every company with an output file
   python analyze.py --truth    # use the hand-made ground truth instead (for checking)
 
 Output:
-  output/ratios.xlsx  sheet "ratios"      one row per company
+  output/ratios.xlsx  sheet "ratios"      one row per company, report year
+                      sheet "ratios_2024" the same for the prior year (if extracted)
+                      sheet "trend"       each ratio in both years, the change, better or worse
                       sheet "definitions" how each ratio is calculated and how to read it
 """
 
@@ -46,14 +49,34 @@ DEFINITIONS = {
 }
 
 
-def load_metrics(use_truth: bool) -> pd.DataFrame:
+# Which way is better, for the trend: True = higher is better, False = lower is better,
+# None = neither (capex intensity: heavy investment is not good or bad in itself).
+# The reported-NIBD ratio is left out: the common definition is used for the trend.
+HIGHER_IS_BETTER = {
+    "ebitda_margin": True,
+    "ebit_margin": True,
+    "nibd_common_to_ebitda": False,
+    "interest_cover": True,
+    "equity_ratio": True,
+    "cash_conversion": True,
+    "capex_intensity": None,
+    "fcf_margin": True,
+}
+# Changes smaller than this count as "flat": 0.5 percentage points, or 0.1x.
+FLAT = {"pct": 0.005, "x": 0.1}
+
+
+def load_metrics(use_truth: bool, year: int = YEAR) -> pd.DataFrame:
     """One row per company, one column per metric, money in millions of the reporting currency."""
     if use_truth:
         df = pd.read_excel(GROUND_TRUTH, sheet_name="ground_truth")
+        df = df[df["year"] == year]
+        if df.empty:
+            raise SystemExit(f"No {year} rows in {GROUND_TRUTH}.")
     else:
-        files = sorted(OUTPUT_DIR.glob(f"*_{YEAR}.csv"))
+        files = sorted(OUTPUT_DIR.glob(f"*_{year}.csv"))
         if not files:
-            raise SystemExit(f"No output/*_{YEAR}.csv files. Run extract.py first.")
+            raise SystemExit(f"No output/*_{year}.csv files. Run extract.py first.")
         df = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
 
     df["company"] = df["company"].astype(str).str.strip()
@@ -111,6 +134,39 @@ def show(r: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def fmt_ratio(name: str, v: float) -> str:
+    kind = DEFINITIONS[name][2]
+    if pd.isna(v):
+        return "n/a"
+    return f"{v:.1%}" if kind == "pct" else f"{v:.1f}x"
+
+
+def trend(prev: pd.DataFrame, cur: pd.DataFrame, prev_year: int) -> pd.DataFrame:
+    """Long table: one row per company and ratio, with both years, the change and its direction."""
+    rows = []
+    for company in cur.index.intersection(prev.index):
+        for name, higher_better in HIGHER_IS_BETTER.items():
+            a, b = prev.loc[company, name], cur.loc[company, name]
+            kind = DEFINITIONS[name][2]
+            change = b - a
+            if pd.isna(change):
+                direction = "n/a"
+            elif abs(change) < FLAT[kind]:
+                direction = "flat"
+            elif higher_better is None:
+                direction = "up" if change > 0 else "down"
+            else:
+                direction = "better" if (change > 0) == higher_better else "worse"
+            if kind == "pct":
+                change_text = f"{change * 100:+.1f}pp"
+            else:
+                change_text = f"{change:+.1f}x"
+            rows.append({"company": company, "ratio": name, str(prev_year): round(a, 4),
+                         str(YEAR): round(b, 4), "change": change_text, "direction": direction,
+                         "shown": f"{fmt_ratio(name, a)} -> {fmt_ratio(name, b)} ({direction})"})
+    return pd.DataFrame(rows)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Ratios and peer comparison.")
     parser.add_argument("--truth", action="store_true", help="use the ground truth instead of the model output")
@@ -131,11 +187,38 @@ def main() -> None:
     print("\nNet debt as reported vs one common definition (debt incl. leases - cash), millions:")
     print(ratios[["currency", "nibd_reported_m", "nibd_common_m"]].to_string())
 
+    prev_year = YEAR - 1
+    prev_ratios, changes = None, None
+    has_prev = (GROUND_TRUTH.exists() and args.truth) or any(OUTPUT_DIR.glob(f"*_{prev_year}.csv"))
+    if has_prev:
+        try:
+            prev_ratios = compute_ratios(load_metrics(args.truth, prev_year))
+        except SystemExit as e:
+            print(f"\n({e} No trend shown.)")
+    if prev_ratios is not None:
+        changes = trend(prev_ratios, ratios, prev_year)
+        wide = changes.pivot(index="ratio", columns="company", values="shown")
+        wide = wide.reindex(list(HIGHER_IS_BETTER))
+        print(f"\nTrend {prev_year} -> {YEAR} (net debt on the common definition; "
+              f"changes under 0.5pp or 0.1x count as flat):")
+        for company in wide.columns:
+            print(f"\n  {company}")
+            for name, text in wide[company].items():
+                print(f"    {name:<22} {text}")
+        judged = changes[changes["ratio"].map(HIGHER_IS_BETTER).notna()]  # drops capex intensity
+        counts = judged.groupby("company")["direction"].value_counts().unstack(fill_value=0)
+        cols = [c for c in ["better", "worse", "flat"] if c in counts.columns]
+        print("\nNumber of ratios that got better / worse (capex intensity not counted):")
+        print(counts[cols].to_string())
+
     OUTPUT_DIR.mkdir(exist_ok=True)
     out = OUTPUT_DIR / "ratios.xlsx"
     defs = pd.DataFrame([{"ratio": k, "formula": f, "how to read": h} for k, (f, h, _) in DEFINITIONS.items()])
     with pd.ExcelWriter(out) as w:
         ratios.round(4).to_excel(w, sheet_name="ratios")
+        if prev_ratios is not None:
+            prev_ratios.round(4).to_excel(w, sheet_name=f"ratios_{prev_year}")
+            changes.drop(columns="shown").to_excel(w, sheet_name="trend", index=False)
         defs.to_excel(w, sheet_name="definitions", index=False)
     print(f"\nSaved {out}")
 
