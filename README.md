@@ -18,7 +18,7 @@ Annual report PDF (200+ pages)
 2. compare.py    Check every figure against a hand-made answer key
    │             and open the cited page to confirm the number is printed there
    ▼
-3. analyze.py    Turn the 14 figures into 8 credit ratios and put the
+3. analyze.py    Turn the 14 figures into 9 credit ratios and put the
    │             companies side by side (pure Python, no API call)
    ▼
 4. summarize.py  Claude writes a short credit view per company from the ratio
@@ -61,7 +61,8 @@ nothing else broke.
 |---|---|---|---|---|
 | EBITDA margin | 12.1% | 17.7% | 14.5% | 42.6% |
 | EBIT margin | 1.7% | 6.5% | 5.1% | 26.6% |
-| NIBD / EBITDA | 4.1x | net cash | 0.8x | 1.5x |
+| NIBD / EBITDA, as reported | 4.1x | net cash | 0.8x | 1.5x |
+| Net debt / EBITDA, common definition | 4.1x | 1.0x | 0.8x | 1.5x |
 | Interest cover (EBIT / interest) | 0.7x | 3.1x | 4.3x | 5.2x |
 | Equity ratio | 36.2% | 64.2% | 53.9% | 65.4% |
 | Cash conversion (OCF / EBITDA) | 88.2% | 102.4% | 83.2% | 87.4% |
@@ -76,18 +77,28 @@ FCF and OCF − capex differ at all four; at Norden the reported figure is posit
 (USD 170.4m) while OCF − capex is negative (USD −251.9m). The tool therefore uses one
 common definition for comparison and keeps the reported figure next to it.
 
+**One net debt definition for all.** The same applies to net interest-bearing debt (NIBD).
+The common definition is interest-bearing debt incl. leases − cash. For DFDS, Norden and TORM
+the two are almost equal. Maersk reports net cash (USD −2,947m), because it also deducts
+securities and interest-bearing receivables; on the common definition it has net debt of
+USD 9,878m, or 1.0x EBITDA. Leverage is still low, but "net cash" holds only on Maersk's own
+definition. This also explains why a net cash company has interest cover of only 3.1x:
+its large lease liabilities carry interest.
+
 ### 3. Credit summaries
 
 `output/credit_summaries.md` holds a headline, profitability, debt, cash and "watch" point
 for each company, plus a peer comparison. Example (DFDS):
 
-> DFDS is the most stretched of the four: leverage is high, EBIT does not cover interest,
-> and the year ended in a net loss, though cash generation is positive.
+> DFDS has the highest leverage in the group and an EBIT that does not cover interest,
+> though cash generation before investment is still positive.
 
 **How the text is controlled**
 
 - The model sees only the ratio table and may not calculate new numbers or add figures
   from memory.
+- Rankings (best to worst on each ratio) are worked out in Python and given to the model.
+  Every comparison word in the text (highest, lowest, above, below) must follow them.
 - After the call, `summarize.py` checks every number in the text against the table
   (allowing normal rounding) and writes the result at the end of the file.
 - No credit ratings and no buy/sell views.
@@ -98,8 +109,20 @@ described as if it just about covered interest (below 1.0x it does not cover it 
 ratio (capex intensity, 20.2%) was compared with an amount (operating cash flow). Every
 number was correct; the logic was not. I added two rules to the prompt (describe each value
 as what it is; compare a ratio with a ratio and an amount with an amount), re-ran, and
-checked both points again. The number check confirms that no figure is invented; the
-reasoning still needs a person to read it.
+checked both points again.
+
+A second round came after adding the common net debt definition. The number check passed
+again, but the text still had comparison errors: it called Maersk the "strongest balance
+sheet" although TORM leads on equity ratio and interest cover and Norden has lower leverage,
+and in the peer summary it wrote that Maersk's FCF margin (9.2%) was above TORM's (14.1%),
+then corrected itself in the same sentence. More prompt rules would not fix this reliably,
+because the model was still comparing numbers itself. So I moved the comparisons into code:
+`summarize.py` ranks the companies on each ratio, and the model may only use those rankings.
+On the next run every comparison matched.
+
+The lesson: the number check confirms that no figure is invented, but the reasoning still
+needs a person to read it, and where a person finds an error that code can prevent, the fix
+goes into code rather than into the prompt.
 
 ### Cost
 
@@ -128,9 +151,6 @@ python summarize.py                # credit summaries -> output/credit_summaries
 
 ## Limitations and next steps
 
-- **Net debt is company-defined.** NIBD is taken as reported; Maersk, for example, deducts
-  items beyond balance-sheet cash. Next: add a common definition (interest-bearing debt − cash),
-  as already done for FCF.
 - **One year only.** Next: extract 2024 as well, to show whether each company is improving or
   getting worse.
 - **Four companies, one sector.** The page finder was tuned on shipping reports; other

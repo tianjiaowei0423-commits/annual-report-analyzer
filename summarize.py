@@ -33,14 +33,16 @@ FACTS = [
     ("ebitda", "EBITDA", "money"),
     ("ebit", "EBIT", "money"),
     ("net_profit", "Net profit", "money"),
-    ("net_interest_bearing_debt", "Net interest-bearing debt", "money"),
+    ("net_interest_bearing_debt", "Net interest-bearing debt as reported by the company", "money"),
+    ("nibd_common_m", "Net debt, common definition (interest-bearing debt incl. leases - cash)", "money"),
     ("operating_cash_flow", "Operating cash flow", "money"),
     ("capex", "Capex", "money"),
     ("fcf_common_m", "FCF, common definition (OCF - capex)", "money"),
     ("fcf_reported_m", "FCF as reported by the company", "money"),
     ("ebitda_margin", "EBITDA margin", "pct"),
     ("ebit_margin", "EBIT margin", "pct"),
-    ("nibd_to_ebitda", "NIBD / EBITDA", "x"),
+    ("nibd_to_ebitda", "NIBD / EBITDA, as reported", "x"),
+    ("nibd_common_to_ebitda", "Net debt / EBITDA, common definition", "x"),
     ("interest_cover", "Interest cover (EBIT / interest)", "x"),
     ("equity_ratio", "Equity ratio", "pct"),
     ("cash_conversion", "Cash conversion (OCF / EBITDA)", "pct"),
@@ -98,12 +100,38 @@ def build_facts() -> tuple[dict, pd.DataFrame]:
         cur = row["currency"]
         facts[company] = {label: fmt(row[col], kind, cur) for col, label, kind in FACTS}
         if row["net_interest_bearing_debt"] < 0:
-            facts[company]["NIBD / EBITDA"] = "net cash (NIBD is negative)"
+            facts[company]["NIBD / EBITDA, as reported"] = "net cash on the company's own definition (NIBD is negative)"
     return facts, table
 
 
+# Rankings are worked out here, in Python, so the model never has to compare numbers itself.
+# (column, label, True if a higher value is better)
+RANKED = [
+    ("ebitda_margin", "EBITDA margin", True),
+    ("ebit_margin", "EBIT margin", True),
+    ("nibd_common_to_ebitda", "Net debt / EBITDA, common definition", False),
+    ("interest_cover", "Interest cover", True),
+    ("equity_ratio", "Equity ratio", True),
+    ("cash_conversion", "Cash conversion", True),
+    ("fcf_margin", "FCF margin, common definition", True),
+    ("capex_intensity", "Capex intensity", None),  # neither better nor worse: highest first
+]
+
+
+def build_rankings(table: pd.DataFrame) -> list[str]:
+    """One line per ratio, from best to worst, e.g. 'Interest cover, best to worst: TORM 5.2x, ...'."""
+    kinds = {col: kind for col, _, kind in FACTS}
+    lines = []
+    for col, label, higher_better in RANKED:
+        col_values = table[col].dropna().sort_values(ascending=higher_better is False)
+        order = "highest to lowest" if higher_better is None else "best to worst"
+        items = ", ".join(f"{c} {fmt(v, kinds[col], '')}" for c, v in col_values.items())
+        lines.append(f"- {label}, {order}: {items}")
+    return lines
+
+
 # --------------------------------------------------------- 2. ask Claude
-def build_prompt(facts: dict) -> str:
+def build_prompt(facts: dict, rankings: list[str]) -> str:
     defs = "\n".join(f"- {k}: {f}. {h}" for k, (f, h, _) in DEFINITIONS.items())
     return f"""You are a credit analyst. Below are figures for {YEAR}, extracted from the annual reports of
 {len(facts)} Danish-listed shipping and logistics companies, with ratios calculated from them.
@@ -111,6 +139,9 @@ Money is in millions of each company's own reporting currency.
 
 FACTS (JSON):
 {json.dumps(facts, indent=2)}
+
+RANKINGS (worked out from the facts):
+{chr(10).join(rankings)}
 
 RATIO DEFINITIONS:
 {defs}
@@ -124,6 +155,14 @@ Rules:
   way (e.g. 12.1%, 4.1x, USD 251.9m). Do not calculate new numbers, do not round differently,
   and do not add anything from memory about these companies.
 - Compare ratios, not absolute amounts: the companies report in different currencies.
+- Every comparison word (highest, lowest, best, weakest, above, below another company) must
+  follow the RANKINGS. Do not call a company "strongest" or "weakest" overall; name the
+  ratios on which it leads or lags instead.
+- Describe leverage by its level on the common definition (low, moderate, high). A company
+  that reports net cash but has low leverage on the common definition is still low-leverage;
+  do not call the two views opposite.
+- Write each sentence once, as a finished statement. Do not correct yourself in the text;
+  check against the RANKINGS before writing.
 - Describe each value as what it is. Interest cover below 1.0x means EBIT does not cover
   interest at all (not "barely covers"). Net cash means negative NIBD.
 - Compare like with like: a ratio with a ratio, an amount with an amount. Write "capex
@@ -131,6 +170,9 @@ Rules:
   operating cash flow".
 - When "FCF as reported" differs a lot from the common definition, say so briefly: companies
   define free cash flow differently.
+- Base the leverage view on "Net debt / EBITDA, common definition". When the company's own
+  NIBD differs a lot from the common definition (for example net cash on its own definition
+  but net debt on the common one), say so and name both: companies define net debt differently.
 - In the peer summary, note that the business models differ (ferries and logistics, container
   shipping, dry bulk and tankers, product tankers), so part of the gaps comes from the business,
   not only from how well each company is run.
@@ -215,7 +257,7 @@ def main() -> None:
     args = parser.parse_args()
 
     facts, table = build_facts()
-    prompt = build_prompt(facts)
+    prompt = build_prompt(facts, build_rankings(table))
     if args.dry_run:
         print(prompt)
         print(f"\n(about {len(prompt) // 4:,} input tokens; no API call made)")
