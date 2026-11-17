@@ -8,13 +8,17 @@ Steps:
      by keyword scoring, skipping parent company pages.
   3. Send only those pages, plus the rules in data/ground_truth.xlsx
      (sheet "extraction_rules"), to Claude.
-  4. Save the 14 metrics, with unit, PDF page and note, to output/<company>_2025.csv
+  4. Save the 14 metrics, with unit, PDF page and note, to output/<company>_<year>.csv
      in the same layout as the ground truth sheet.
+
+The 2025 reports also show 2024 as the comparative column, so --year 2024 reads the
+same pages of the same reports and takes the 2024 column instead.
 
 Usage:
   python extract.py DFDS --dry-run   # only show which pages would be sent (free)
   python extract.py DFDS             # run the extraction (calls the API)
   python extract.py all              # every company in COMPANIES
+  python extract.py all --year 2024  # prior-year column from the same 2025 reports
   python extract.py DFDS --show-page 123   # debug one page (free)
 """
 
@@ -31,7 +35,7 @@ from pypdf import PdfReader
 logging.getLogger("pypdf").setLevel(logging.ERROR)  # hide font warnings
 
 MODEL = "claude-sonnet-5-5"
-YEAR = 2025
+YEAR = 2025  # year of the annual reports in data/reports
 REPORTS_DIR = Path("data/reports")
 GROUND_TRUTH = Path("data/ground_truth.xlsx")
 OUTPUT_DIR = Path("output")
@@ -307,7 +311,17 @@ RECORD_TOOL = {
 }
 
 
-def build_prompt(company: str, currency: str, pages: list[str], page_ids: list[int], rules: str) -> str:
+def year_rule(year: int) -> str:
+    if year == YEAR:
+        return f"Take the {YEAR} column, not the prior year."
+    return (f"Take the {year} column: the prior-year comparative figures printed next to {YEAR}. "
+            f"Do not take the {YEAR} column. Where this report restates {year} figures, use them as "
+            f"shown here. The extraction rules say 'current-year column'; in this run that means "
+            f"the {year} column.")
+
+
+def build_prompt(company: str, currency: str, pages: list[str], page_ids: list[int], rules: str,
+                 year: int = YEAR) -> str:
     metric_list = "\n".join(f"- {k}: {v}" for k, v in METRICS.items())
     page_text = "\n\n".join(
         f"=== PDF page {i + 1} ===\n{pages[i][:MAX_CHARS_PER_PAGE]}" for i in page_ids
@@ -315,14 +329,14 @@ def build_prompt(company: str, currency: str, pages: list[str], page_ids: list[i
     return f"""You are a credit analyst extracting figures from the {YEAR} annual report of {company}
 (reporting currency {currency}). Below are selected pages of the report.
 
-Extract these 14 metrics for financial year {YEAR}:
+Extract these 14 metrics for financial year {year}:
 {metric_list}
 
 Extraction rules (learned from manual extraction, follow them strictly):
 {rules}
 
 Output rules:
-- Use only the pages below. Take the {YEAR} column, not the prior year.
+- Use only the pages below. {year_rule(year)}
 - value: the number exactly as reported (keep the sign; costs and capex shown in brackets are negative).
   Do not convert units. If a metric is the sum of several lines, add them and list the parts in note.
 - unit: the unit stated on that page (million, billion, thousand); "count" for employees.
@@ -348,11 +362,11 @@ def parse_metrics(response) -> list[dict]:
     return json.loads(text[start:end + 1])["metrics"]
 
 
-def extract(company: str, pages: list[str], page_ids: list[int]) -> tuple[pd.DataFrame, object]:
+def extract(company: str, pages: list[str], page_ids: list[int], year: int) -> tuple[pd.DataFrame, object]:
     import anthropic  # imported here so --dry-run works without an API key
 
     client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from the environment / .env
-    prompt = build_prompt(company, COMPANIES[company]["currency"], pages, page_ids, load_rules())
+    prompt = build_prompt(company, COMPANIES[company]["currency"], pages, page_ids, load_rules(), year)
     response = client.messages.create(
         model=MODEL,
         max_tokens=4000,
@@ -361,7 +375,7 @@ def extract(company: str, pages: list[str], page_ids: list[int]) -> tuple[pd.Dat
     )
     rows = parse_metrics(response)
     df = pd.DataFrame(rows)
-    df.insert(0, "year", YEAR)
+    df.insert(0, "year", year)
     df.insert(0, "company", company)
     # keep the same metric order as the ground truth sheet
     df["metric"] = pd.Categorical(df["metric"], categories=list(METRICS), ordered=True)
@@ -370,9 +384,9 @@ def extract(company: str, pages: list[str], page_ids: list[int]) -> tuple[pd.Dat
 
 
 # ------------------------------------------------------------------- 4. run
-def run(company: str, dry_run: bool) -> None:
+def run(company: str, dry_run: bool, year: int = YEAR) -> None:
     pdf_path = REPORTS_DIR / COMPANIES[company]["file"]
-    print(f"\n### {company}: reading {pdf_path}")
+    print(f"\n### {company} {year}: reading {pdf_path}")
     pages = read_pages(pdf_path)
     located, parent_start = locate_pages(pages)
 
@@ -389,9 +403,9 @@ def run(company: str, dry_run: bool) -> None:
     if dry_run:
         return
 
-    df, usage = extract(company, pages, page_ids)
+    df, usage = extract(company, pages, page_ids, year)
     OUTPUT_DIR.mkdir(exist_ok=True)
-    out = OUTPUT_DIR / f"{company.lower()}_{YEAR}.csv"
+    out = OUTPUT_DIR / f"{company.lower()}_{year}.csv"
     df.to_csv(out, index=False)
     print(df[["metric", "value", "unit", "page"]].to_string(index=False))
     print(f"Saved {out}  (tokens in {usage.input_tokens:,}, out {usage.output_tokens:,})")
@@ -419,13 +433,15 @@ def main() -> None:
     parser.add_argument("company", choices=list(COMPANIES) + ["all"])
     parser.add_argument("--dry-run", action="store_true", help="only show selected pages, no API call")
     parser.add_argument("--show-page", type=int, help="debug: show text and scores of one PDF page")
+    parser.add_argument("--year", type=int, default=YEAR, choices=[YEAR, YEAR - 1],
+                        help=f"financial year to extract (default {YEAR}; {YEAR - 1} = prior-year column)")
     args = parser.parse_args()
     if args.show_page:
         show_page(args.company, args.show_page)
         return
     targets = list(COMPANIES) if args.company == "all" else [args.company]
     for company in targets:
-        run(company, args.dry_run)
+        run(company, args.dry_run, args.year)
 
 
 if __name__ == "__main__":

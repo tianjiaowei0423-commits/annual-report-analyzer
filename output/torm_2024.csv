@@ -1,0 +1,15 @@
+company,year,metric,value,unit,currency,page,note
+TORM,2024,revenue,1559.2,million,USD,153,"Revenue, 2024 column, consolidated income statement"
+TORM,2024,ebitda,851.0,million,USD,6,"EBITDA (key figures, 2024); consistent with EBIT 658.8 + D&A 192.0 = 850.8"
+TORM,2024,ebit,658.8,million,USD,153,"Operating profit (EBIT), 2024"
+TORM,2024,net_profit,611.5,million,USD,153,"Net profit for the year, group total incl. NCI (612.5 TORM shareholders, -1.0 NCI)"
+TORM,2024,interest_expense,70.3,million,USD,172,"Interest expenses on borrowings 69.7 + financial expenses from lease liabilities 0.6; excludes commitment fees, FX, swaps"
+TORM,2024,total_assets,3469.6,million,USD,154,TOTAL ASSETS 2024
+TORM,2024,total_equity,2074.8,million,USD,154,"Total equity incl. NCI 0.8, 2024"
+TORM,2024,cash,291.2,million,USD,154,"Cash and cash equivalents incl. restricted cash (balance sheet), 2024; includes restricted cash 19.3"
+TORM,2024,total_borrowings,1226.3,million,USD,154,"Non-current borrowings 1,061.0 + current borrowings 165.3 (borrowings line includes lease liabilities per notes 11,19)"
+TORM,2024,net_interest_bearing_debt,948.0,million,USD,6,"Net interest-bearing debt (company APM, key figures), 2024"
+TORM,2024,operating_cash_flow,826.8,million,USD,157,"Net cash flow from operating activities, 2024"
+TORM,2024,capex,-583.5,million,USD,157,Investment in tangible fixed assets -582.4 + intangible -1.1 (cash basis; excludes non-cash share-issued vessel acquisitions)
+TORM,2024,free_cash_flow,385.0,million,USD,6,Free cash flow as reported in key figures 2024 (company APM). OCF + capex = 826.8 - 583.5 = 243.3
+TORM,2024,employees,607.0,count,,169,"Average number of permanent employees (FTE basis), total 2024: 109 seafarers + 498 land-based"

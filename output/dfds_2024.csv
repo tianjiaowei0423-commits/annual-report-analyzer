@@ -1,0 +1,15 @@
+company,year,metric,value,unit,currency,page,note
+DFDS,2024,revenue,29753,million,DKK,122,Income statement 'Revenue' 2024 column; excludes other income
+DFDS,2024,ebitda,4440,million,DKK,122,"Operating profit before depreciation and amortisation (EBITDA), 2024"
+DFDS,2024,ebit,1506,million,DKK,122,"Operating profit (EBIT), 2024"
+DFDS,2024,net_profit,541,million,DKK,122,"Profit/loss for the year 2024, group total incl. non-controlling interests (534 + 6 rounding)"
+DFDS,2024,interest_expense,822,million,DKK,164,"Note 4.4 2024: Interest expense to banks, credit institutions, corporate bonds 536 + interest expense on lease liabilities 286; excludes FX, pension, other financial costs"
+DFDS,2024,total_assets,39281,million,DKK,123,Balance sheet 'Assets' 31 Dec 2024
+DFDS,2024,total_equity,13890,million,DKK,123,"Equity incl. non-controlling interests of 75, 31 Dec 2024"
+DFDS,2024,cash,1589,million,DKK,123,"Cash and cash equivalents, balance sheet 31 Dec 2024"
+DFDS,2024,total_borrowings,18734,million,DKK,123,"Interest-bearing liabilities non-current 17,113 + current 1,621 (incl. lease liabilities 5,872); note 4.3 total 18,733 (rounding)"
+DFDS,2024,net_interest_bearing_debt,17204,million,DKK,12,"Key figures 'Net interest-bearing debt' 2024, company-reported"
+DFDS,2024,operating_cash_flow,3420,million,DKK,126,Cash flows from operating activities 2024
+DFDS,2024,capex,-1583,million,DKK,126,Investments in ferries incl. dockings -818 + other non-current tangible assets -669 + intangible assets -96; excludes acquisitions and disposals
+DFDS,2024,free_cash_flow,-227,million,DKK,126,"Company-reported Free cash flow 2024 = OCF 3,420 + investing cash flows -3,647 (includes acquisitions; does not deduct lease repayments). OCF + capex = 3,420 - 1,583 = 1,837"
+DFDS,2024,employees,14121,count,,12,Average number of employees (FTE) 2024

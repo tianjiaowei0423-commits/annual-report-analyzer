@@ -1,0 +1,15 @@
+company,year,metric,value,unit,currency,page,note
+Norden,2024,revenue,4040.1,million,USD,110,"Revenue 2024 column, income statement"
+Norden,2024,ebitda,514.2,million,USD,110,EBITDA 2024 restated to include profit from sale of vessels (82.0); previously 432.2
+Norden,2024,ebit,202.1,million,USD,110,Profit from operations (EBIT) 2024
+Norden,2024,net_profit,162.7,million,USD,110,Profit for the year 2024; all attributable to owners
+Norden,2024,interest_expense,41.8,million,USD,143,Interest expenses 10.3 + Interest expenses on lease liabilities 31.5 (note 4.3); excludes FX and derivative adjustments
+Norden,2024,total_assets,2254.8,million,USD,111,TOTAL ASSETS 2024
+Norden,2024,total_equity,1297.1,million,USD,111,Total equity 2024 (no non-controlling interests)
+Norden,2024,cash,266.6,million,USD,111,Cash and cash equivalents 2024 balance sheet
+Norden,2024,total_borrowings,530.3,million,USD,111,Non-current borrowings 106.9 + lease liabilities 176.6 + current borrowings 2.3 + lease liabilities 244.5 = 530.3 (matches note 4.2: 6.9+102.3+421.1=530.3 gross)
+Norden,2024,net_interest_bearing_debt,263.7,million,USD,143,Company-reported net interest-bearing debt 2024: borrowings 6.9 + financing lease borrowings 102.3 + lease liabilities 421.1 - cash 266.6
+Norden,2024,operating_cash_flow,415.4,million,USD,112,Cash flow from operating activities 2024
+Norden,2024,capex,-471.5,million,USD,112,"Investments in assets, assets held for sale and other tangible assets -340.5 + Prepayments on vessels and newbuildings -131.0; no separate intangibles line"
+Norden,2024,free_cash_flow,-74.3,million,USD,112,Company-reported FCF = OCF 415.4 + investing CF 126.6 - term deposits change 230.5 - lease instalments 344.0 - interest paid 41.8 (deducts leases). OCF + capex = 415.4 - 471.5 = -56.1
+Norden,2024,employees,457.0,count,,124,"Average number of employees 2024 (average FTE per key figures, p.12)"
