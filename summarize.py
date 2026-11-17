@@ -21,7 +21,7 @@ from pathlib import Path
 import pandas as pd
 from dotenv import load_dotenv
 
-from analyze import DEFINITIONS, compute_ratios, load_metrics
+from analyze import DEFINITIONS, HIGHER_IS_BETTER, compute_ratios, load_metrics, trend
 
 MODEL = "claude-sonnet-5-5"
 YEAR = 2025
@@ -66,6 +66,9 @@ SUMMARY_TOOL = {
                         "profitability": {"type": "string", "description": "1-2 sentences."},
                         "debt": {"type": "string", "description": "1-2 sentences: leverage, interest cover, equity ratio."},
                         "cash": {"type": "string", "description": "1-2 sentences: cash conversion, capex, FCF."},
+                        "trend": {"type": "string",
+                                  "description": "1-2 sentences: the most important changes from the prior "
+                                                 "year, naming each ratio with both values."},
                         "watch": {"type": "string", "description": "One sentence: the main point to watch."},
                     },
                     "required": ["company", "headline", "profitability", "debt", "cash", "watch"],
@@ -88,6 +91,28 @@ def fmt(value: float, kind: str, currency: str) -> str:
         return f"{value:.1f}x"
     whole = abs(value - round(value)) < 1e-9 or abs(value) >= 10_000
     return f"{currency} {value:,.0f}m" if whole else f"{currency} {value:,.1f}m"
+
+
+PREV_YEAR = YEAR - 1
+
+
+def build_trend(table: pd.DataFrame) -> tuple[dict, pd.DataFrame | None]:
+    """Prior-year comparison, worked out in Python: {company: [lines]} and the prior-year ratios.
+    Empty if the prior year has not been extracted."""
+    if not any(OUTPUT_DIR.glob(f"*_{PREV_YEAR}.csv")):
+        return {}, None
+    prev = compute_ratios(load_metrics(use_truth=False, year=PREV_YEAR))
+    changes = trend(prev, table[list(HIGHER_IS_BETTER)], PREV_YEAR)
+    labels = {col: label for col, label, _ in FACTS}
+    lines: dict[str, list[str]] = {}
+    for r in changes.to_dict("records"):
+        kind = DEFINITIONS[r["ratio"]][2]
+        # unrounded values, so each figure reads exactly as in the facts (17.7%, not 17.6%)
+        a = fmt(prev.loc[r["company"], r["ratio"]], kind, "")
+        b = fmt(table.loc[r["company"], r["ratio"]], kind, "")
+        lines.setdefault(r["company"], []).append(
+            f"{labels.get(r['ratio'], r['ratio'])}: {a} in {PREV_YEAR} -> {b} in {YEAR} ({r['direction']})")
+    return lines, prev
 
 
 def build_facts() -> tuple[dict, pd.DataFrame]:
@@ -131,7 +156,23 @@ def build_rankings(table: pd.DataFrame) -> list[str]:
 
 
 # --------------------------------------------------------- 2. ask Claude
-def build_prompt(facts: dict, rankings: list[str]) -> str:
+def build_prompt(facts: dict, rankings: list[str], trend_lines: dict | None = None) -> str:
+    if trend_lines:
+        trend_text = "\n".join(f"{c}:\n" + "\n".join(f"  - {x}" for x in xs)
+                               for c, xs in trend_lines.items())
+        trend_block = (f"\nTREND {PREV_YEAR} -> {YEAR} (worked out from the facts; better/worse "
+                       f"already accounts for which direction is good; capex intensity up/down "
+                       f"is neither good nor bad):\n{trend_text}\n")
+        trend_rules = f"""
+- Use TREND for every statement about change since {PREV_YEAR}. Write a change with both values
+  ("interest cover fell from 1.8x to 0.7x"). Do not calculate the size of a change (no "down
+  2.8 points", no percentages of change). Words such as improved, weakened, rose or fell must
+  match the direction in TREND; "flat" means about unchanged.
+- In the trend field, pick the one or two changes that matter most for credit (interest cover,
+  leverage, margins, free cash flow). Mention a key change in the headline when it shapes the
+  credit picture."""
+    else:
+        trend_block, trend_rules = "", ""
     defs = "\n".join(f"- {k}: {f}. {h}" for k, (f, h, _) in DEFINITIONS.items())
     return f"""You are a credit analyst. Below are figures for {YEAR}, extracted from the annual reports of
 {len(facts)} Danish-listed shipping and logistics companies, with ratios calculated from them.
@@ -143,6 +184,7 @@ FACTS (JSON):
 RANKINGS (worked out from the facts):
 {chr(10).join(rankings)}
 
+{trend_block}
 RATIO DEFINITIONS:
 {defs}
 
@@ -162,7 +204,7 @@ Rules:
   that reports net cash but has low leverage on the common definition is still low-leverage;
   do not call the two views opposite.
 - Write each sentence once, as a finished statement. Do not correct yourself in the text;
-  check against the RANKINGS before writing.
+  check against the RANKINGS before writing.{trend_rules}
 - Describe each value as what it is. Interest cover below 1.0x means EBIT does not cover
   interest at all (not "barely covers"). Net cash means negative NIBD.
 - Compare like with like: a ratio with a ratio, an amount with an amount. Write "capex
@@ -187,12 +229,17 @@ def call_claude(prompt: str) -> tuple[dict, object]:
     client = anthropic.Anthropic()
     response = client.messages.create(
         model=MODEL,
-        max_tokens=3000,
+        max_tokens=6000,  # the full set of summaries is about 3,000 tokens; leave room
         tools=[SUMMARY_TOOL],  # no forced tool_choice: this model does not support it
         messages=[{"role": "user", "content": prompt}],
     )
+    if response.stop_reason == "max_tokens":
+        raise RuntimeError(f"The answer was cut off at max_tokens ({response.usage.output_tokens:,} "
+                           f"tokens written). Raise max_tokens in call_claude and run again.")
     for block in response.content:
         if block.type == "tool_use" and block.name == "record_summaries":
+            if "companies" not in block.input:
+                raise RuntimeError(f"The answer has no 'companies' list. It was:\n{str(block.input)[:1000]}")
             return block.input, response.usage
     # fallback, as in extract.py: the model answered in text, take the JSON object from it
     text = "".join(getattr(b, "text", "") for b in response.content)
@@ -208,7 +255,7 @@ NUM_RE = re.compile(r"-?\d[\d,]*(?:\.\d+)?")
 
 def allowed_numbers(table: pd.DataFrame) -> list[float]:
     """Every number the model may use, in the forms it may appear (12.1% -> 12.1, 4.1x -> 4.1)."""
-    out = [float(YEAR), 1.0]  # 1.0x: the "does not cover interest" line named in the rules
+    out = [float(YEAR), float(PREV_YEAR), 1.0]  # 1.0x: the "does not cover interest" line
     # thresholds named in the ratio definitions ("around 3x", "below about 2x") may be quoted
     for _, how, _ in DEFINITIONS.values():
         out += [float(n) for n in NUM_RE.findall(how)]
@@ -238,13 +285,16 @@ def check_numbers(text: str, allowed: list[float]) -> list[str]:
 # ------------------------------------------------------------- 4. output
 def to_markdown(result: dict, facts: dict) -> str:
     lines = [f"# Credit summaries, {YEAR}", "",
-             "Written by Claude from the ratio table in `output/ratios.xlsx`. The underlying figures "
-             "were extracted from the annual reports and checked against a hand-made ground truth.", ""]
+             f"Written by Claude from the ratio table in `output/ratios.xlsx`. The {YEAR} figures were "
+             f"extracted from the annual reports and checked against a hand-made answer key; the "
+             f"{PREV_YEAR} comparatives come from the same reports and were checked against the "
+             f"cited pages.", ""]
     for c in result["companies"]:
         lines += [f"## {c['company']}", "", f"**{c['headline']}**", "",
                   f"- **Profitability:** {c['profitability']}",
                   f"- **Debt:** {c['debt']}",
                   f"- **Cash:** {c['cash']}",
+                  *([f"- **Trend {PREV_YEAR}→{YEAR}:** {c['trend']}"] if c.get("trend") else []),
                   f"- **Watch:** {c['watch']}", ""]
     lines += ["## Peer comparison", "", result["peer_summary"], ""]
     return "\n".join(lines)
@@ -257,7 +307,8 @@ def main() -> None:
     args = parser.parse_args()
 
     facts, table = build_facts()
-    prompt = build_prompt(facts, build_rankings(table))
+    trend_lines, prev = build_trend(table)
+    prompt = build_prompt(facts, build_rankings(table), trend_lines)
     if args.dry_run:
         print(prompt)
         print(f"\n(about {len(prompt) // 4:,} input tokens; no API call made)")
@@ -267,6 +318,10 @@ def main() -> None:
     md = to_markdown(result, facts)
 
     allowed = allowed_numbers(table)
+    if prev is not None:  # prior-year ratios may be quoted too
+        pct_cols = {c for c, _, k in FACTS if k == "pct"}
+        for col in HIGHER_IS_BETTER:
+            allowed += [abs(v * 100) if col in pct_cols else abs(v) for v in prev[col].dropna()]
     body = md.split("\n", 4)[-1]  # skip the fixed header text
     bad = check_numbers(body, allowed)
 

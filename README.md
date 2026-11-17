@@ -3,7 +3,8 @@
 AI tool that reads company annual reports, extracts key financial figures, turns them into
 credit ratios and writes a short credit view per company, with checks at every step.
 
-Test set: four Danish shipping companies, 2025 annual reports (DFDS, Maersk, Norden, TORM).
+Test set: four Danish shipping companies, 2025 annual reports (DFDS, Maersk, Norden, TORM),
+with the 2024 comparatives from the same reports to show the trend.
 
 ## How it works
 
@@ -18,8 +19,8 @@ Annual report PDF (200+ pages)
 2. compare.py    Check every figure against a hand-made answer key
    │             and open the cited page to confirm the number is printed there
    ▼
-3. analyze.py    Turn the 14 figures into 9 credit ratios and put the
-   │             companies side by side (pure Python, no API call)
+3. analyze.py    Turn the 14 figures into 9 credit ratios, put the companies
+   │             side by side and show the 2024 -> 2025 change (pure Python)
    ▼
 4. summarize.py  Claude writes a short credit view per company from the ratio
                  table; every number in the text is checked against the table
@@ -47,6 +48,12 @@ compared them with the tool's output using `compare.py`.
 - **Cited page shows the figure:** `compare.py` opens the PDF page the model cites and checks
   that the number (or each part of a sum) is printed there, so every figure can be traced
   back to its source.
+
+**2024 comparatives.** The 2025 reports also print 2024 next to each figure, so
+`extract.py --year 2024` reads the same pages and takes the prior-year column. There is no
+hand-made answer key for 2024 yet, so two automatic checks are used instead: every 2024
+figure is printed on the page the model cites (56/56), and no 2024 figure equals its 2025
+value (0/56), which would suggest the wrong column was read.
 
 **Blind test on an unseen company.** TORM was added only after the page-finding rules were
 built and tuned on DFDS, Maersk and Norden. On the first run, all 14 values were correct.
@@ -85,20 +92,48 @@ USD 9,878m, or 1.0x EBITDA. Leverage is still low, but "net cash" holds only on 
 definition. This also explains why a net cash company has interest cover of only 3.1x:
 its large lease liabilities carry interest.
 
-### 3. Credit summaries
+### 3. Trend, 2024 to 2025
 
-`output/credit_summaries.md` holds a headline, profitability, debt, cash and "watch" point
-for each company, plus a peer comparison. Example (DFDS):
+On most ratios all four companies were weaker in 2025 than in 2024 (capex intensity is not
+counted as better or worse):
 
-> DFDS has the highest leverage in the group and an EBIT that does not cover interest,
-> though cash generation before investment is still positive.
+| | Better | Worse | Flat |
+|---|---|---|---|
+| DFDS | 2 | 5 | 0 |
+| Maersk | 1 | 6 | 0 |
+| Norden | 2 | 4 | 1 |
+| TORM | 1 | 6 | 0 |
+
+The changes that matter most for credit:
+
+- **DFDS:** interest cover fell from 1.8x to 0.7x, so EBIT no longer covers interest;
+  leverage rose from 3.9x to 4.1x.
+- **Maersk:** interest cover fell from 6.5x to 3.1x as the EBIT margin fell from 11.7% to 6.5%.
+- **Norden:** capex intensity rose from 11.7% to 20.2%, the FCF margin fell from −1.4% to
+  −8.1%, and leverage rose from 0.5x to 0.8x: the investment is being funded with debt.
+- **TORM:** the EBITDA margin fell from 54.6% to 42.6% but is still the highest of the four;
+  capex intensity fell from 37.4% to 23.2%.
+
+Margins fell at three of the four companies at the same time, across different segments of
+shipping, which points to the market as much as to company-specific factors. Full table:
+`output/ratios.xlsx`, sheet `trend` (changes under 0.5 percentage points or 0.1x count as flat).
+
+### 4. Credit summaries
+
+`output/credit_summaries.md` holds a headline, profitability, debt, cash, trend and "watch"
+point for each company, plus a peer comparison. Example (DFDS):
+
+> DFDS has the highest leverage of the four at 4.1x net debt / EBITDA, and EBIT does not
+> cover interest after interest cover fell from 1.8x to 0.7x.
 
 **How the text is controlled**
 
 - The model sees only the ratio table and may not calculate new numbers or add figures
   from memory.
-- Rankings (best to worst on each ratio) are worked out in Python and given to the model.
-  Every comparison word in the text (highest, lowest, above, below) must follow them.
+- Rankings (best to worst on each ratio) and the direction of each 2024 -> 2025 change
+  (better, worse, flat) are worked out in Python and given to the model. Every comparison
+  word in the text (highest, lowest, improved, fell) must follow them, and the model may not
+  calculate the size of a change itself.
 - After the call, `summarize.py` checks every number in the text against the table
   (allowing normal rounding) and writes the result at the end of the file.
 - No credit ratings and no buy/sell views.
@@ -143,15 +178,21 @@ annual reports in `data/reports/` (e.g. `dfds_2025.pdf`, not committed).
 ```bash
 python extract.py DFDS --dry-run   # show which pages would be sent (free)
 python extract.py all              # extract the 14 figures for every company
+python extract.py all --year 2024  # the prior-year column from the same reports
 python compare.py                  # check against the ground truth
-python analyze.py                  # ratios -> output/ratios.xlsx
+python compare.py --year 2024      # page check and wrong-column check for 2024
+python analyze.py                  # ratios and trend -> output/ratios.xlsx
 python summarize.py --dry-run      # show the prompt (free)
 python summarize.py                # credit summaries -> output/credit_summaries.md
 ```
 
 ## Limitations and next steps
 
-- **One year only.** Next: extract 2024 as well, to show whether each company is improving or
-  getting worse.
+- **2024 has no hand-made answer key yet.** The automatic checks confirm that each figure is
+  printed in the report and is not the 2025 value, but not that it is the right line item.
+  Next: hand-extract DFDS 2024 as an answer key.
+- **Two years only.** Enough to show a direction, not a cycle; shipping earnings swing with
+  freight rates, so a longer history would say more.
 - **Four companies, one sector.** The page finder was tuned on shipping reports; other
   sectors may need new keywords.
+  
