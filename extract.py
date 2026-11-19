@@ -1,6 +1,11 @@
 """
 Annual report analyzer - version 1: extract key financial figures.
 
+Sectors: every company belongs to a sector (shipping, beverages). All sectors share the
+14 core metrics; a sector can add its own metrics, page sections and starting rules
+(SECTOR_METRICS, SECTOR_SECTIONS, SECTOR_RULES). Shipping output stays in output/,
+other sectors go to output/<sector>/ so the shipping peer tables are not mixed up.
+
 Steps:
   1. Read every page of the annual report PDF (pypdf).
   2. Locate the pages that matter (income statement, balance sheet,
@@ -17,7 +22,8 @@ same pages of the same reports and takes the 2024 column instead.
 Usage:
   python extract.py DFDS --dry-run   # only show which pages would be sent (free)
   python extract.py DFDS             # run the extraction (calls the API)
-  python extract.py all              # every company in COMPANIES
+  python extract.py all              # every shipping company (default sector)
+  python extract.py all --sector beverages   # every beverage company
   python extract.py all --year 2024  # prior-year column from the same 2025 reports
   python extract.py DFDS --show-page 123   # debug one page (free)
 """
@@ -41,13 +47,16 @@ GROUND_TRUTH = Path("data/ground_truth.xlsx")
 OUTPUT_DIR = Path("output")
 
 COMPANIES = {
-    "DFDS": {"file": "dfds_2025.pdf", "currency": "DKK"},
-    "Maersk": {"file": "maersk_2025.pdf", "currency": "USD"},
-    "Norden": {"file": "norden_2025.pdf", "currency": "USD"},
-    "TORM": {"file": "torm_2025.pdf", "currency": "USD"},
+    "DFDS": {"file": "dfds_2025.pdf", "currency": "DKK", "sector": "shipping"},
+    "Maersk": {"file": "maersk_2025.pdf", "currency": "USD", "sector": "shipping"},
+    "Norden": {"file": "norden_2025.pdf", "currency": "USD", "sector": "shipping"},
+    "TORM": {"file": "torm_2025.pdf", "currency": "USD", "sector": "shipping"},
+    # beverages: peers are added once the peer set is decided
+    "Carlsberg": {"file": "carlsberg_2025.pdf", "currency": "DKK", "sector": "beverages"},
 }
+DEFAULT_SECTOR = "shipping"
 
-METRICS = {
+CORE_METRICS = {
     "revenue": "Revenue",
     "ebitda": "EBITDA",
     "ebit": "EBIT / operating profit",
@@ -63,6 +72,45 @@ METRICS = {
     "free_cash_flow": "Free cash flow (company-reported)",
     "employees": "Number of employees (prefer average FTE)",
 }
+
+# Extra metrics per sector, on top of the 14 core metrics.
+SECTOR_METRICS = {
+    "beverages": {
+        "volume_total": "Total sales volume in million hectolitres, beer and soft drinks together (group)",
+        "organic_volume_growth": "Organic volume growth, % (excl. acquisitions and divestments)",
+        "organic_revenue_growth": "Organic revenue growth, % (excl. acquisitions, divestments and currency)",
+        "organic_operating_profit_growth": "Organic operating profit growth, % (company-reported)",
+        "gross_profit": "Gross profit",
+        "sales_distribution_expenses": "Sales and distribution expenses (marketing and selling costs)",
+        "special_items": "Special items, net, before tax (restructuring, impairment, deal and integration costs)",
+        "operating_profit_adjusted": "Operating profit on the company's adjusted basis "
+                                     "(e.g. before special items, or MPM), company-reported",
+    },
+}
+
+# Starting rules for a sector, used next to the rules in ground_truth.xlsx. Refine them
+# after the hand extraction, as was done for shipping.
+SECTOR_RULES = {
+    "beverages": [
+        "[volume_total] Take total group volume in million hl (beer + soft drinks / other beverages). "
+        "If several volume measures are shown (e.g. pro rata vs total), take the total one and name it in note",
+        "[organic_volume_growth, organic_revenue_growth, organic_operating_profit_growth] Take the "
+        "company's own organic figure as a percentage; never use reported growth, which includes "
+        "acquisitions and currency. unit = percent",
+        "[gross_profit] Take 'Gross profit' from the income statement; if there is none, revenue minus "
+        "cost of sales, and say so in note",
+        "[special_items] Take the net special items line before tax; costs are negative",
+        "[operating_profit_adjusted] Take the company's adjusted operating profit (e.g. 'before special "
+        "items' or '(MPM)'); in note, write which adjustments the company makes",
+        "[ebit] EBIT = operating profit after special items. If the report has no such line, add "
+        "'operating profit before special items' and 'special items, net', and list both parts in note",
+        "[free_cash_flow] If the report shows both a free cash flow before acquisitions (e.g. 'free "
+        "operating cash flow') and one after acquisitions ('free cash flow'), take the one before "
+        "acquisitions; give the other figure in note",
+    ],
+}
+
+METRICS = dict(CORE_METRICS)  # the active list; set_sector() adds the sector metrics
 
 # Each section: words that appear in its heading, and line items expected on the page.
 SECTIONS = {
@@ -107,6 +155,81 @@ SECTIONS = {
         "labels": ["wages", "salaries", "pension", "employees", "fte"],
     },
 }
+CORE_SECTIONS = dict(SECTIONS)
+
+# Extra pages to find per sector. "notes_only": search only after the income statement.
+SECTOR_SECTIONS = {
+    "beverages": {
+        "volumes_and_growth": {
+            "titles": ["organic growth", "organic development", "key figures", "group performance",
+                       "volumes"],
+            "keys": ["million hl", "m hl", "acquisitions, net", "organic", "total volumes",
+                     "pro rata volumes"],
+            # regional pages repeat the same words; the group page is the one we want
+            "avoid": ["western europe", "asia", "central & eastern europe", "eastern europe and india"],
+            "labels": ["volume", "revenue", "operating profit", "organic", "acquisition",
+                       "currency", "hl"],
+        },
+        "special_items_note": {
+            "notes_only": True,
+            "titles": ["special items"],
+            "keys": ["restructuring", "integration costs", "impairment"],
+            "labels": ["restructuring", "impairment", "acquisition", "integration", "special items"],
+        },
+    },
+}
+
+
+# Changes to a core section for one sector (merged into a copy of the core section).
+SECTOR_SECTION_OVERRIDES = {
+    "beverages": {
+        # Carlsberg's five-year key figures page starts with a volume table
+        "key_figures": {"keys": ["total volume", "five-year"]},
+    },
+}
+
+# A five-year summary names every statement (income statement, statement of financial
+# position, cash flows...), so the table-of-contents penalty hits it. A real table of
+# contents has few figures with thousands separators; a five-year summary has many.
+# Only switched on per sector, so the tuned shipping page choice stays as it was.
+TOC_EXEMPT_DENSE = {"beverages": True}
+DENSE_NUMBER_RE = re.compile(r"\d{1,3}(?:,\d{3})+")
+DENSE_MIN = 40
+SETTINGS = {"toc_exempt_dense": False}  # set by set_sector()
+
+# Words that mark the income statement of a parent company in a statement set. Shipping
+# parents report revenue; a brewing group's parent is a holding company with no revenue
+# line, so its income statement is recognised by the profit line instead.
+SECTOR_STATEMENT_KEYS = {
+    "beverages": ["revenue", "profit for the period", "profit for the year"],
+}
+STATEMENT_KEYS = ["revenue"]  # the active list; set_sector() changes it
+
+
+def set_sector(sector: str) -> None:
+    """Make the metrics and sections of one sector active (core + sector extras)."""
+    METRICS.clear()
+    METRICS.update(CORE_METRICS)
+    METRICS.update(SECTOR_METRICS.get(sector, {}))
+    SECTIONS.clear()
+    SECTIONS.update(CORE_SECTIONS)
+    SECTIONS.update(SECTOR_SECTIONS.get(sector, {}))
+    for name, change in SECTOR_SECTION_OVERRIDES.get(sector, {}).items():
+        merged = dict(CORE_SECTIONS[name])
+        for key, words in change.items():
+            merged[key] = list(merged.get(key, [])) + words
+        SECTIONS[name] = merged
+    SETTINGS["toc_exempt_dense"] = TOC_EXEMPT_DENSE.get(sector, False)
+    STATEMENT_KEYS[:] = SECTOR_STATEMENT_KEYS.get(sector, ["revenue"])
+
+
+def output_path(company: str, year: int) -> Path:
+    """Shipping keeps output/<company>_<year>.csv; other sectors use output/<sector>/."""
+    sector = COMPANIES[company]["sector"]
+    folder = OUTPUT_DIR if sector == DEFAULT_SECTOR else OUTPUT_DIR / sector
+    return folder / f"{company.lower()}_{year}.csv"
+
+
 PAGES_PER_SECTION = 2
 MAX_CHARS_PER_PAGE = 6000
 NUMBER_RE = re.compile(r"\(?-?\d[\d,.]*\)?")
@@ -177,9 +300,11 @@ def score_page(text: str, section: dict) -> float:
     score += min(len(NUMBER_RE.findall(text)) / 40, 3.0)  # statement pages are dense with numbers
     # Table of contents mentions many sections at once: push it down.
     sections_named = sum(
-        has_any(s["titles"], text) for s in SECTIONS.values()
+        has_any(s["titles"], text) for s in CORE_SECTIONS.values()
     )
-    if sections_named >= 4:
+    dense_table = (SETTINGS["toc_exempt_dense"]
+                   and len(DENSE_NUMBER_RE.findall(text)) >= DENSE_MIN)
+    if sections_named >= 4 and not dense_table:
         score -= 4.0
     return score
 
@@ -190,7 +315,7 @@ STATEMENT_SETS: list[int] = []  # filled by find_parent_start, shown in the dry 
 def find_parent_start(pages: list[str]) -> int:
     """Danish reports put the consolidated statements first and the parent company
     statements later. A statement set = a page with an income statement title and
-    a revenue line, followed within 1-3 pages by a page headed 'balance sheet' or
+    a revenue line (or another STATEMENT_KEYS line), followed within 1-3 pages by a page headed 'balance sheet' or
     'statement of financial position'. The earliest set is the consolidated one;
     the last set more than 20 pages later marks the parent company section.
     Returns len(pages) if there is no second set."""
@@ -201,7 +326,7 @@ def find_parent_start(pages: list[str]) -> int:
         return any(has_any(bs, pages[j][:300]) for j in range(i + 1, min(i + 4, len(pages))))
 
     sets = [i for i, text in enumerate(pages)
-            if has_any(inc, text) and has_any(["revenue"], text) and bs_follows(i)]
+            if has_any(inc, text) and has_any(STATEMENT_KEYS, text) and bs_follows(i)]
     STATEMENT_SETS[:] = sets
     if not sets:
         return len(pages)
@@ -258,6 +383,10 @@ def locate_pages(pages: list[str]) -> tuple[dict[str, list[tuple[int, float]]], 
     found["key_figures"] = rank(SECTIONS["key_figures"], PAGES_PER_SECTION)
     found["financial_items_note"] = rank(SECTIONS["financial_items_note"], 3, anchor, notes_only=True)
     found["employees_note"] = rank(SECTIONS["employees_note"], PAGES_PER_SECTION, anchor, notes_only=True)
+    for name, section in SECTIONS.items():  # sector sections
+        if name not in CORE_SECTIONS:
+            found[name] = rank(section, PAGES_PER_SECTION, anchor,
+                               notes_only=section.get("notes_only", False))
     return found, parent_start
 
 
@@ -269,22 +398,32 @@ def first_line(text: str) -> str:
 
 
 # ------------------------------------------------------------ 3. call Claude
-def load_rules() -> str:
+def load_rules(sector: str = DEFAULT_SECTOR) -> str:
     try:
         rules = pd.read_excel(GROUND_TRUTH, sheet_name="extraction_rules")
     except FileNotFoundError:
         print(f"Warning: {GROUND_TRUTH} not found, running without rules.")
-        return "(no rules)"
+        return sector_rules(sector) or "(no rules)"
     except ValueError:
         sheets = pd.ExcelFile(GROUND_TRUTH).sheet_names
         print(f"Warning: no sheet named 'extraction_rules' in {GROUND_TRUTH}. "
               f"Sheets found: {sheets}. Running without rules.")
-        return "(no rules)"
+        return sector_rules(sector) or "(no rules)"
     rules = rules.dropna(subset=["rule"])
-    return "\n".join(f"- [{r.metric}] {r.rule}" for r in rules.itertuples())
+    # general rules and rules for the active metrics only
+    rules = rules[rules["metric"].astype(str).str.strip().isin(["general", *METRICS])]
+    lines = [f"- [{r.metric}] {r.rule}" for r in rules.itertuples()]
+    extra = sector_rules(sector)
+    return "\n".join(lines + ([extra] if extra else []))
 
 
-RECORD_TOOL = {
+def sector_rules(sector: str) -> str:
+    return "\n".join(f"- {r}" for r in SECTOR_RULES.get(sector, []))
+
+
+def record_tool() -> dict:
+    """The tool schema, built for the active metric list."""
+    return {
     "name": "record_metrics",
     "description": "Record the extracted financial metrics.",
     "input_schema": {
@@ -297,7 +436,8 @@ RECORD_TOOL = {
                     "properties": {
                         "metric": {"type": "string", "enum": list(METRICS)},
                         "value": {"type": ["number", "null"]},
-                        "unit": {"type": "string", "enum": ["million", "billion", "thousand", "count"]},
+                        "unit": {"type": "string", "enum": ["million", "billion", "thousand", "count",
+                                                            "percent", "million hl"]},
                         "currency": {"type": ["string", "null"]},
                         "page": {"type": ["integer", "null"]},
                         "note": {"type": "string"},
@@ -308,7 +448,7 @@ RECORD_TOOL = {
         },
         "required": ["metrics"],
     },
-}
+    }
 
 
 def year_rule(year: int) -> str:
@@ -329,7 +469,7 @@ def build_prompt(company: str, currency: str, pages: list[str], page_ids: list[i
     return f"""You are a credit analyst extracting figures from the {YEAR} annual report of {company}
 (reporting currency {currency}). Below are selected pages of the report.
 
-Extract these 14 metrics for financial year {year}:
+Extract these {len(METRICS)} metrics for financial year {year}:
 {metric_list}
 
 Extraction rules (learned from manual extraction, follow them strictly):
@@ -339,12 +479,13 @@ Output rules:
 - Use only the pages below. {year_rule(year)}
 - value: the number exactly as reported (keep the sign; costs and capex shown in brackets are negative).
   Do not convert units. If a metric is the sum of several lines, add them and list the parts in note.
-- unit: the unit stated on that page (million, billion, thousand); "count" for employees.
-- currency: e.g. DKK or USD; null for employees.
+- unit: the unit stated on that page (million, billion, thousand); "count" for employees;
+  "percent" for growth rates; "million hl" for volumes.
+- currency: e.g. DKK or USD; null for employees, volumes and percentages.
 - page: the number from the "=== PDF page N ===" marker where the figure is found.
 - note: short; the exact line label used, how it was calculated, and any definition differences.
   If the metric is not on these pages, set value and page to null and write "not found".
-- Return all 14 metrics by calling the record_metrics tool exactly once. Do not answer in plain text.
+- Return all {len(METRICS)} metrics by calling the record_metrics tool exactly once. Do not answer in plain text.
 
 {page_text}"""
 
@@ -366,11 +507,12 @@ def extract(company: str, pages: list[str], page_ids: list[int], year: int) -> t
     import anthropic  # imported here so --dry-run works without an API key
 
     client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from the environment / .env
-    prompt = build_prompt(company, COMPANIES[company]["currency"], pages, page_ids, load_rules(), year)
+    rules = load_rules(COMPANIES[company]["sector"])
+    prompt = build_prompt(company, COMPANIES[company]["currency"], pages, page_ids, rules, year)
     response = client.messages.create(
         model=MODEL,
         max_tokens=4000,
-        tools=[RECORD_TOOL],
+        tools=[record_tool()],
         messages=[{"role": "user", "content": prompt}],
     )
     rows = parse_metrics(response)
@@ -385,8 +527,9 @@ def extract(company: str, pages: list[str], page_ids: list[int], year: int) -> t
 
 # ------------------------------------------------------------------- 4. run
 def run(company: str, dry_run: bool, year: int = YEAR) -> None:
+    set_sector(COMPANIES[company]["sector"])
     pdf_path = REPORTS_DIR / COMPANIES[company]["file"]
-    print(f"\n### {company} {year}: reading {pdf_path}")
+    print(f"\n### {company} {year} ({COMPANIES[company]['sector']}): reading {pdf_path}")
     pages = read_pages(pdf_path)
     located, parent_start = locate_pages(pages)
 
@@ -404,8 +547,8 @@ def run(company: str, dry_run: bool, year: int = YEAR) -> None:
         return
 
     df, usage = extract(company, pages, page_ids, year)
-    OUTPUT_DIR.mkdir(exist_ok=True)
-    out = OUTPUT_DIR / f"{company.lower()}_{year}.csv"
+    out = output_path(company, year)
+    out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out, index=False)
     print(df[["metric", "value", "unit", "page"]].to_string(index=False))
     print(f"Saved {out}  (tokens in {usage.input_tokens:,}, out {usage.output_tokens:,})")
@@ -413,6 +556,7 @@ def run(company: str, dry_run: bool, year: int = YEAR) -> None:
 
 def show_page(company: str, page_no: int) -> None:
     """Debug: print the start of one page and its score for every section."""
+    set_sector(COMPANIES[company]["sector"])
     pages = read_pages(REPORTS_DIR / COMPANIES[company]["file"])
     text = pages[page_no - 1]
     print(f"--- p.{page_no}, first 500 characters as pypdf reads them ---")
@@ -435,14 +579,21 @@ def main() -> None:
     parser.add_argument("--show-page", type=int, help="debug: show text and scores of one PDF page")
     parser.add_argument("--year", type=int, default=YEAR, choices=[YEAR, YEAR - 1],
                         help=f"financial year to extract (default {YEAR}; {YEAR - 1} = prior-year column)")
+    sectors = sorted({c["sector"] for c in COMPANIES.values()})
+    parser.add_argument("--sector", choices=sectors, default=DEFAULT_SECTOR,
+                        help=f"with 'all': which sector to run (default {DEFAULT_SECTOR})")
     args = parser.parse_args()
     if args.show_page:
         show_page(args.company, args.show_page)
         return
-    targets = list(COMPANIES) if args.company == "all" else [args.company]
+    if args.company == "all":
+        targets = [c for c, info in COMPANIES.items() if info["sector"] == args.sector]
+    else:
+        targets = [args.company]
     for company in targets:
         run(company, args.dry_run, args.year)
 
 
 if __name__ == "__main__":
     main()
+      

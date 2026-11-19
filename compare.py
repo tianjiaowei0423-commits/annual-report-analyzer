@@ -1,4 +1,4 @@
-"""
+""""
 Compare the model's extraction (output/<company>_2025.csv) with the
 hand-made ground truth (data/ground_truth.xlsx, sheet "ground_truth").
 
@@ -27,7 +27,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from extract import COMPANIES, REPORTS_DIR, YEAR, read_pages
+from extract import COMPANIES, REPORTS_DIR, YEAR, output_path, read_pages
 
 GROUND_TRUTH = Path("data/ground_truth.xlsx")
 OUTPUT_DIR = Path("output")
@@ -104,7 +104,7 @@ def verify_page(value, page, note, pages: list[str]) -> bool:
 
 
 def compare(company: str, truth: pd.DataFrame, year: int) -> pd.DataFrame | None:
-    out_file = OUTPUT_DIR / f"{company.lower()}_{year}.csv"
+    out_file = output_path(company, year)
     if not out_file.exists():
         flag = "" if year == YEAR else f" --year {year}"
         print(f"\n### {company} {year}: {out_file} not found. Run: python extract.py {company}{flag}")
@@ -134,7 +134,7 @@ def compare(company: str, truth: pd.DataFrame, year: int) -> pd.DataFrame | None
     # Prior year: both columns are printed on the same page, so the page check cannot tell
     # them apart. A value identical to the report-year value suggests the wrong column.
     merged["same_as_report_year"] = False
-    current = OUTPUT_DIR / f"{company.lower()}_{YEAR}.csv"
+    current = output_path(company, YEAR)
     if year != YEAR and current.exists():
         cur = pd.read_csv(current).set_index("metric")["value"]
         v_cur = pd.to_numeric(merged["metric"].map(cur), errors="coerce")
@@ -154,7 +154,7 @@ def main() -> None:
     truth = pd.read_excel(GROUND_TRUTH, sheet_name="ground_truth")
     truth["company"] = truth["company"].astype(str).str.strip()
     companies = args.companies or [c for c in COMPANIES
-                                   if (OUTPUT_DIR / f"{c.lower()}_{args.year}.csv").exists()]
+                                   if output_path(c, args.year).exists()]
 
     results = []
     for company in companies:
