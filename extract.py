@@ -51,8 +51,19 @@ COMPANIES = {
     "Maersk": {"file": "maersk_2025.pdf", "currency": "USD", "sector": "shipping"},
     "Norden": {"file": "norden_2025.pdf", "currency": "USD", "sector": "shipping"},
     "TORM": {"file": "torm_2025.pdf", "currency": "USD", "sector": "shipping"},
-    # beverages: peers are added once the peer set is decided
+    # beverages: acquirer + peer set decided 2026-11-20 (see notes/assumptions_log.md)
     "Carlsberg": {"file": "carlsberg_2025.pdf", "currency": "DKK", "sector": "beverages"},
+    "Heineken": {"file": "heineken_2025.pdf", "currency": "EUR", "sector": "beverages"},
+    "ABInBev": {"file": "abinbev_2025.pdf", "currency": "USD", "sector": "beverages"},
+    "RoyalUnibrew": {"file": "royalunibrew_2025.pdf", "currency": "DKK", "sector": "beverages"},
+    "Asahi": {"file": "asahi_2025.pdf", "currency": "JPY", "sector": "beverages"},
+    "CCHBC": {"file": "hbc_2025.pdf", "currency": "EUR", "sector": "beverages"},
+    "CCEP": {"file": "ccep_2025.pdf", "currency": "EUR", "sector": "beverages"},
+    "AGBarr": {"file": "agbarr_2025.pdf", "currency": "GBP", "sector": "beverages",
+               "fy_note": "A.G. Barr's financial year 2025 is the 53 weeks ended 31 January 2026; "
+                          "its column may be headed 2026 or FY25/26. Take that column, not the "
+                          "year ended January 2025."},
+    "Monster": {"file": "monster_2025.pdf", "currency": "USD", "sector": "beverages"},
 }
 DEFAULT_SECTOR = "shipping"
 
@@ -185,6 +196,16 @@ SECTOR_SECTION_OVERRIDES = {
     "beverages": {
         # Carlsberg's five-year key figures page starts with a volume table
         "key_figures": {"keys": ["total volume", "five-year"]},
+        # US 10-K title (Monster), UK 'profit for the period' (A.G. Barr, 53-week year),
+        # 'profit after tax' (Coca-Cola HBC, CCEP); labels help when the title is read late
+        "income_statement": {"titles": ["statements of income", "statement of income"],
+                             "keys": ["profit for the period", "profit after tax"],
+                             "labels": ["gross profit", "cost of sales", "profit before tax",
+                                        "finance costs"],
+                             # summary pages that repeat the income statement lines (CCEP p.310,
+                             # A.G. Barr p.194): penalised only when the heading is at the top
+                             "avoid": ["selected financial data", "non-gaap measures",
+                                       "reconciliation of non-gaap"]},
     },
 }
 
@@ -195,7 +216,7 @@ SECTOR_SECTION_OVERRIDES = {
 TOC_EXEMPT_DENSE = {"beverages": True}
 DENSE_NUMBER_RE = re.compile(r"\d{1,3}(?:,\d{3})+")
 DENSE_MIN = 40
-SETTINGS = {"toc_exempt_dense": False}  # set by set_sector()
+SETTINGS = {"toc_exempt_dense": False, "note_alone": False}  # set by set_sector()
 
 # Words that mark the income statement of a parent company in a statement set. Shipping
 # parents report revenue; a brewing group's parent is a holding company with no revenue
@@ -220,6 +241,7 @@ def set_sector(sector: str) -> None:
             merged[key] = list(merged.get(key, [])) + words
         SECTIONS[name] = merged
     SETTINGS["toc_exempt_dense"] = TOC_EXEMPT_DENSE.get(sector, False)
+    SETTINGS["note_alone"] = NOTE_ALONE.get(sector, False)
     STATEMENT_KEYS[:] = SECTOR_STATEMENT_KEYS.get(sector, ["revenue"])
 
 
@@ -238,6 +260,10 @@ NUMBER_RE = re.compile(r"\(?-?\d[\d,.]*\)?")
 # column header of a main statement from matching.
 NOTE_HEADING_RE = re.compile(r"(?im)^\s*note\s+\d{1,2}(\.\d{1,2})?\s*[–—:-]")
 NOTE_PENALTY = 8.0
+# CCEP writes the note heading alone on its line ("Note 18"), with no dash after it.
+# Switched on per sector, so the tuned shipping page choice stays as it was.
+NOTE_ALONE_RE = re.compile(r"(?im)^[ \t]*note[ \t]+\d{1,2}[ \t]*$")
+NOTE_ALONE = {"beverages": True}
 
 
 # ---------------------------------------------------------------- 1. read PDF
@@ -255,14 +281,20 @@ def read_pages(pdf_path: Path) -> list[str]:
 # ---------------------------------------------------------- 2. locate pages
 def is_parent_company_page(text: str) -> bool:
     top = text[:400].lower()
-    return "parent company" in top or "cash pool" in text.lower()
+    if "parent company" in top or "cash pool" in text.lower():
+        return True
+    # Swiss groups (Coca-Cola HBC) put the parent's statutory accounts under this heading.
+    # Only the first line counts: the page navigation bar repeats the words on every page.
+    return first_line(text).lower().startswith("swiss statutory reporting")
 
 
 def is_note_page(text: str) -> bool:
     """True if a note heading appears near the top of the page. Notes can repeat the
     line items of a main statement (e.g. a segment balance sheet), so they must not
     win the income statement / balance sheet / cash flow slots."""
-    return bool(NOTE_HEADING_RE.search(text[:300]))
+    if NOTE_HEADING_RE.search(text[:300]):
+        return True
+    return SETTINGS["note_alone"] and bool(NOTE_ALONE_RE.search(text[:300]))
 
 
 def squash(text: str) -> str:
@@ -476,7 +508,7 @@ Extraction rules (learned from manual extraction, follow them strictly):
 {rules}
 
 Output rules:
-- Use only the pages below. {year_rule(year)}
+- Use only the pages below. {year_rule(year)} {COMPANIES[company].get("fy_note", "") if year == YEAR else ""}
 - value: the number exactly as reported (keep the sign; costs and capex shown in brackets are negative).
   Do not convert units. If a metric is the sum of several lines, add them and list the parts in note.
 - unit: the unit stated on that page (million, billion, thousand); "count" for employees;
@@ -596,4 +628,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-      
