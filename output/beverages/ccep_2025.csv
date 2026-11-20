@@ -1,0 +1,23 @@
+company,year,metric,value,unit,currency,page,note
+CCEP,2025,revenue,20901.0,million,EUR,143,Revenue (income statement); 'Revenue' is after excise/duties not separately shown
+CCEP,2025,ebitda,3700.0,million,EUR,58,"Comparable EBITDA (before items impacting comparability); reported EBITDA is 3,716"
+CCEP,2025,ebit,2793.0,million,EUR,143,"Operating profit (reported, after items impacting comparability)"
+CCEP,2025,net_profit,1979.0,million,EUR,143,Profit after taxes (incl. NCI 37)
+CCEP,2025,interest_expense,297.0,million,EUR,188,"Interest expense on external debt 274 (p188, includes swap interest) + lease interest 23 (p173, shown within other finance costs); sum of parts"
+CCEP,2025,total_assets,29872.0,million,EUR,145,Total assets
+CCEP,2025,total_equity,8303.0,million,EUR,145,Total equity incl. NCI 468
+CCEP,2025,cash,918.0,million,EUR,145,Cash and cash equivalents (balance sheet)
+CCEP,2025,total_borrowings,10694.0,million,EUR,145,"Borrowings less current portion 10,224 + current portion 470 (incl. lease obligations); matches 'Total borrowings' p57"
+CCEP,2025,net_interest_bearing_debt,9823.0,million,EUR,57,"Net debt (borrowings adjusted for hedges/other financial items, less cash 918 and short-term investments 39)"
+CCEP,2025,operating_cash_flow,2953.0,million,EUR,146,Net cash flows from operating activities
+CCEP,2025,capex,-950.0,million,EUR,146,Purchases of PP&E (750) + purchases of capitalised software (200)
+CCEP,2025,free_cash_flow,1.8,billion,EUR,50,"Comparable free cash flow €1.8 billion (OCF less capex and net interest payments, adjusted); exact million figure not on given pages (reconciliation p54-56 missing). OCF + capex = 2,953 - 950 = 2,003"
+CCEP,2025,employees,40.1,thousand,,187,"Total average staff employed (average headcount, in thousands); FTE not given"
+CCEP,2025,volume_total,3958.0,million unit cases,,50,Total CCEP volume in million unit cases as reported (not converted)
+CCEP,2025,organic_volume_growth,0.2,percent,,50,"Adjusted comparable volume growth (reported +2.4%, comparable selling-day adjusted +2.7%)"
+CCEP,2025,organic_revenue_growth,2.8,percent,,49,Adjusted comparable and FX neutral revenue growth (reported 2.3%)
+CCEP,2025,organic_operating_profit_growth,7.1,percent,,49,Adjusted comparable FX neutral operating profit growth (reported 31.0%)
+CCEP,2025,gross_profit,7440.0,million,EUR,143,Gross profit (income statement)
+CCEP,2025,sales_distribution_expenses,-3349.0,million,EUR,143,Selling and distribution expenses
+CCEP,2025,special_items,-15.0,million,EUR,153,"Items impacting comparability (net) at operating profit level: reported 2,793 vs comparable 2,808; includes restructuring, accelerated amortisation, deal costs offset by property gains and litigation release"
+CCEP,2025,operating_profit_adjusted,2808.0,million,EUR,153,"Comparable operating profit: excludes items impacting comparability (restructuring, accelerated amortisation, deal/integration costs, property sale gains, litigation); same as adjusted comparable in 2025"

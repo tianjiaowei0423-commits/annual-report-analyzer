@@ -1,0 +1,23 @@
+company,year,metric,value,unit,currency,page,note
+ABInBev,2025,revenue,59320.0,million,USD,82,Revenue (income statement); no excise split shown
+ABInBev,2025,ebitda,21223.0,million,USD,61,"Normalized EBITDA (before non-underlying items). EBITDA after non-underlying items would be 21,223-449=20,774 (derived)"
+ABInBev,2025,ebit,15405.0,million,USD,82,"Profit from operations (after non-underlying items); normalized 15,854 less 449"
+ABInBev,2025,net_profit,8477.0,million,USD,82,"Profit of the period incl. NCI (equity holders 6,837 + NCI 1,640)"
+ABInBev,2025,interest_expense,3194.0,million,USD,108,Interest expense line in Note 11 (net of interest rate derivatives); lease interest of 144m sits in accretion expense and is not included
+ABInBev,2025,total_assets,218808.0,million,USD,84,Total assets 31 Dec 2025
+ABInBev,2025,total_equity,97736.0,million,USD,84,"Total equity incl. NCI 10,449"
+ABInBev,2025,cash,11638.0,million,USD,84,"Cash and cash equivalents, balance sheet"
+ABInBev,2025,total_borrowings,73013.0,million,USD,124,"Interest-bearing loans and borrowings non-current 72,128 + current 885 (incl. lease liabilities); excludes bank overdrafts of 14"
+ABInBev,2025,net_interest_bearing_debt,60941.0,million,USD,124,"Net debt: interest-bearing loans and borrowings plus bank overdrafts less cash, debt securities, and interest-bearing loans granted/deposits"
+ABInBev,2025,operating_cash_flow,14883.0,million,USD,86,Cash flow from/(used in) operating activities
+ABInBev,2025,capex,-3656.0,million,USD,86,"Acquisition of PP&E and intangible assets (gross); net capex is 3,552"
+ABInBev,2025,free_cash_flow,11331.0,million,USD,64,"Company defines FCF as cash flow from operating activities less net capex: 14,883-3,552=11,331 (reported as approx 11.3 billion on pages 11/65). OCF + gross capex = 14,883-3,656 = 11,227"
+ABInBev,2025,employees,136805.0,count,,105,Total number of FTE 2025 (Note 9); FTE basis
+ABInBev,2025,volume_total,561.1,million hl,,56,"AB InBev Worldwide volumes 561,100 thousand hl (beer + non-beer, consolidated)"
+ABInBev,2025,organic_volume_growth,-2.3,percent,,56,"Consolidated organic volume growth (beer -2.6%, non-beer -0.4%)"
+ABInBev,2025,organic_revenue_growth,2.0,percent,,56,Organic revenue growth
+ABInBev,2025,organic_operating_profit_growth,7.0,percent,,56,Normalized EBIT organic growth (organic normalized EBITDA growth 4.9%)
+ABInBev,2025,gross_profit,33179.0,million,USD,82,"Gross profit, income statement"
+ABInBev,2025,sales_distribution_expenses,-13466.0,million,USD,82,"Distribution expenses (6,092) + Sales and marketing expenses (7,374)"
+ABInBev,2025,special_items,-449.0,million,USD,82,Non-underlying income/(expense) above profit from operations (before tax)
+ABInBev,2025,operating_profit_adjusted,15854.0,million,USD,82,"Profit from operations before non-underlying items (Normalized EBIT); excludes non-underlying items such as restructuring, impairment, business combination costs, etc."

@@ -1,0 +1,23 @@
+company,year,metric,value,unit,currency,page,note
+AGBarr,2025,revenue,437.3,million,GBP,142.0,"Revenue, 53 weeks to 31 Jan 2026; no separate excise line (excise included in revenue)"
+AGBarr,2025,ebitda,76.1,million,GBP,194.0,Not reported as a line; calculated: adjusted operating profit 64.8 + depreciation PPE 8.7 + ROU depreciation 2.1 + amortisation 0.5 (p157). Reported EBITDA after adjusting items = 61.6+11.3 = 72.9 (impairment 0.5 within adjusting items)
+AGBarr,2025,ebit,61.6,million,GBP,142.0,Operating profit (after £3.2m adjusting items)
+AGBarr,2025,net_profit,46.7,million,GBP,142.0,"Profit for the period, incl. NCI (-0.4); parent 47.1"
+AGBarr,2025,interest_expense,0.7,million,GBP,160.0,Finance costs: interest payable 0.4 + lease interest 0.3
+AGBarr,2025,total_assets,514.2,million,GBP,144.0,"Total assets, Group 2026"
+AGBarr,2025,total_equity,345.6,million,GBP,144.0,Shareholder equity 338.0 + NCI 7.6
+AGBarr,2025,cash,61.4,million,GBP,144.0,"Cash, Group balance sheet (excludes short-term investments 20.2)"
+AGBarr,2025,total_borrowings,48.0,million,GBP,144.0,Loans and other borrowings 40.0 + lease liabilities current 1.8 + non-current 6.2
+AGBarr,2025,net_interest_bearing_debt,-41.6,million,GBP,183.0,Company-reported net cash surplus £41.6m (cash 61.4 + short-term investments 20.2 - bank borrowings 40.0); excludes lease liabilities; shown as negative = net cash
+AGBarr,2025,operating_cash_flow,51.0,million,GBP,147.0,Net cash from operating activities
+AGBarr,2025,capex,-30.4,million,GBP,147.0,"Purchase of property, plant and equipment; no intangible purchases line shown"
+AGBarr,2025,free_cash_flow,,million,GBP,,not found - no company-reported FCF on these pages; OCF + capex = 51.0 - 30.4 = 20.6
+AGBarr,2025,employees,991.0,count,,160.0,"Average monthly number of people employed by the Group (average headcount basis, not FTE)"
+AGBarr,2025,volume_total,,million hl,,,not found - volume only described as relatively flat
+AGBarr,2025,organic_volume_growth,,percent,,,"not found - volume described as relatively flat, no organic % given"
+AGBarr,2025,organic_revenue_growth,,percent,,,"not found - only total revenue growth of 4.0% (driven by price) mentioned, not labelled organic"
+AGBarr,2025,organic_operating_profit_growth,,percent,,,not found
+AGBarr,2025,gross_profit,177.3,million,GBP,142.0,"Gross profit, income statement"
+AGBarr,2025,sales_distribution_expenses,-57.2,million,GBP,160.0,Distribution costs (including selling costs) in note 5
+AGBarr,2025,special_items,-3.2,million,GBP,194.0,"Total adjusting items before tax: business reorganisation & integration 1.3, acquisition related 1.4, asset impairment 0.5"
+AGBarr,2025,operating_profit_adjusted,64.8,million,GBP,194.0,"Adjusted operating profit: excludes reorganisation/integration 1.3, acquisition-related 1.4, asset impairment 0.5"

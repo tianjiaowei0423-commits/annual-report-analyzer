@@ -110,14 +110,18 @@ SECTOR_RULES = {
         "acquisitions and currency. unit = percent",
         "[gross_profit] Take 'Gross profit' from the income statement; if there is none, revenue minus "
         "cost of sales, and say so in note",
-        "[special_items] Take the net special items line before tax; costs are negative",
+        "[special_items] Take the net special items line before tax; costs are negative. If the company "
+        "reports one combined adjustment between reported and adjusted operating profit (e.g. Heineken 'eia' = "
+        "exceptional items + amortisation of acquisition-related intangibles), take that combined figure in "
+        "operating profit and list its parts in note",
         "[operating_profit_adjusted] Take the company's adjusted operating profit (e.g. 'before special "
         "items' or '(MPM)'); in note, write which adjustments the company makes",
         "[ebit] EBIT = operating profit after special items. If the report has no such line, add "
         "'operating profit before special items' and 'special items, net', and list both parts in note",
         "[free_cash_flow] If the report shows both a free cash flow before acquisitions (e.g. 'free "
-        "operating cash flow') and one after acquisitions ('free cash flow'), take the one before "
-        "acquisitions; give the other figure in note",
+        "operating cash flow') and one after acquisitions ('free cash flow'), take the one BEFORE "
+        "acquisitions; give the other figure in note. In a year with a large acquisition the figure after "
+        "acquisitions is strongly negative; that one is never the answer",
         "[revenue] If the report shows revenue both before and after excise tax/duties, take the one AFTER "
         "excise (Heineken: 'Net revenue'; Carlsberg: 'Revenue' below 'Excise duties'). This overrides the "
         "general 'take Revenue' rule; give the other figure in note",
@@ -129,6 +133,14 @@ SECTOR_RULES = {
         "[volume_total, organic_volume_growth] Some companies report volume in 'mhl' (million hectolitres) "
         "and only beer volume in absolute terms; then take consolidated beer volume and say so in note. "
         "Organic volume growth may be given only for total consolidated volume; take it and name the basis",
+        "[volume_total] Coca-Cola bottlers report volume in unit cases: record the figure as reported with "
+        "unit 'million unit cases'; never label unit cases as hectolitres and do not convert",
+        "[sales_distribution_expenses, special_items, capex] These costs are always negative, also when a "
+        "note prints them without brackets or a minus sign. This sign rule does NOT apply to interest_expense, "
+        "which is always recorded as a positive number",
+        "[general] Take the exact figure in millions from a statement, note or reconciliation table; do not "
+        "take a rounded figure from a highlights page (e.g. '1.8bn') when an exact one exists. Use unit "
+        "'billion' only if no exact million figure is shown, and say so in note",
     ],
 }
 
@@ -192,13 +204,18 @@ SECTOR_SECTIONS = {
                      # Heineken: "234.0mhl", "in millions of hectolitres", "Total consolidated volume"
                      "mhl", "millions of hectolitres", "total consolidated volume"],
             # regional pages repeat the same words; the group page is the one we want
-            "avoid": ["western europe", "asia", "central & eastern europe", "eastern europe and india",
-                      ],
+            "avoid": ["western europe", "asia", "central & eastern europe", "eastern europe and india"],
             "labels": ["volume", "revenue", "operating profit", "organic", "acquisition",
                        "currency", "hl", "beer volume", "consolidated volume"],
             # Heineken: volume (p.7), its organic growth (p.48) and the growth table (p.47)
             # sit on different pages
             "pages": 5,
+        },
+        # Net debt is often only in a reconciliation table (AB InBev, CCEP, CCHBC note 25)
+        "net_debt": {
+            "titles": ["net debt"],
+            "keys": ["net debt"],
+            "labels": ["borrowings", "cash and cash equivalents", "lease", "net debt", "ebitda"],
         },
         "special_items_note": {
             "notes_only": True,
@@ -492,7 +509,7 @@ def record_tool() -> dict:
                         "metric": {"type": "string", "enum": list(METRICS)},
                         "value": {"type": ["number", "null"]},
                         "unit": {"type": "string", "enum": ["million", "billion", "thousand", "count",
-                                                            "percent", "million hl"]},
+                                                            "percent", "million hl", "million unit cases"]},
                         "currency": {"type": ["string", "null"]},
                         "page": {"type": ["integer", "null"]},
                         "note": {"type": "string"},
@@ -535,7 +552,7 @@ Output rules:
 - value: the number exactly as reported (keep the sign; costs and capex shown in brackets are negative).
   Do not convert units. If a metric is the sum of several lines, add them and list the parts in note.
 - unit: the unit stated on that page (million, billion, thousand); "count" for employees;
-  "percent" for growth rates; "million hl" for volumes.
+  "percent" for growth rates; "million hl" for volumes ("million unit cases" if the report counts unit cases).
 - currency: e.g. DKK or USD; null for employees, volumes and percentages.
 - page: the number from the "=== PDF page N ===" marker where the figure is found.
 - note: short; the exact line label used, how it was calculated, and any definition differences.
@@ -651,3 +668,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+       

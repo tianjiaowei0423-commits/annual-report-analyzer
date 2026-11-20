@@ -1,0 +1,23 @@
+company,year,metric,value,unit,currency,page,note
+RoyalUnibrew,2025,revenue,15723.0,million,DKK,133.0,Net revenue (no excise split shown)
+RoyalUnibrew,2025,ebitda,2931.0,million,DKK,135.0,EBITDA; no special items reported
+RoyalUnibrew,2025,ebit,2202.0,million,DKK,133.0,Earnings before interest and tax (EBIT)
+RoyalUnibrew,2025,net_profit,1560.0,million,DKK,133.0,Net profit for the year
+RoyalUnibrew,2025,interest_expense,,million,DKK,,not found – financial expenses note (note 9) not in pages; income statement financial expenses 280 include FX etc.
+RoyalUnibrew,2025,total_assets,18269.0,million,DKK,136.0,Assets
+RoyalUnibrew,2025,total_equity,6713.0,million,DKK,136.0,Equity (no non-controlling interests shown)
+RoyalUnibrew,2025,cash,82.0,million,DKK,136.0,"Cash and cash equivalents, balance sheet"
+RoyalUnibrew,2025,total_borrowings,5812.0,million,DKK,136.0,"Mortgage debt NC 1,009 + credit institutions NC 4,424 + credit institutions current 379 (current mortgage debt nil in 2025); leases assumed in credit institutions; consistent with NIBD 5,730 + cash 82"
+RoyalUnibrew,2025,net_interest_bearing_debt,5730.0,million,DKK,12.0,"Net interest-bearing debt, company-reported"
+RoyalUnibrew,2025,operating_cash_flow,2385.0,million,DKK,138.0,Cash flows from operating activities
+RoyalUnibrew,2025,capex,-841.0,million,DKK,138.0,"Purchase of PP&E -797 + purchase of intangible assets -44; highlights CAPEX 1,007 is a different (incl. leases) measure"
+RoyalUnibrew,2025,free_cash_flow,1413.0,million,DKK,138.0,"Company-reported: OCF 2,385 + investing excl. acquisitions -795 - lease payments 177 (deducts leases). OCF + capex = 2,385-841 = 1,544"
+RoyalUnibrew,2025,employees,4352.0,count,,152.0,Average number of employees (note 6)
+RoyalUnibrew,2025,volume_total,18.1,million hl,,134.0,"Volumes, beverages (mhl), total group beer and soft drinks"
+RoyalUnibrew,2025,organic_volume_growth,4.0,percent,,134.0,"Volume growth 4%, all organic"
+RoyalUnibrew,2025,organic_revenue_growth,3.0,percent,,134.0,Organic revenue growth
+RoyalUnibrew,2025,organic_operating_profit_growth,10.0,percent,,31.0,Organic EBIT growth
+RoyalUnibrew,2025,gross_profit,6766.0,million,DKK,133.0,Gross profit
+RoyalUnibrew,2025,sales_distribution_expenses,-3638.0,million,DKK,133.0,"Sales and distribution expenses, shown as negative in income statement"
+RoyalUnibrew,2025,special_items,,million,DKK,,not found – company does not report special items on these pages
+RoyalUnibrew,2025,operating_profit_adjusted,,million,DKK,,"not found – no adjusted operating profit reported; EBIT 2,202 is the reported measure"

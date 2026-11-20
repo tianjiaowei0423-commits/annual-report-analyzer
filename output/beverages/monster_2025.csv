@@ -1,0 +1,23 @@
+company,year,metric,value,unit,currency,page,note
+Monster,2025,revenue,8294343.0,thousand,USD,83.0,NET SALES (no excise split); in USD thousands
+Monster,2025,ebitda,,thousand,USD,,"not found as reported line; D&A 114,441 on cash flow page 86 + operating income 2,419,354 would be derived but not company-reported"
+Monster,2025,ebit,2419354.0,thousand,USD,83.0,OPERATING INCOME
+Monster,2025,net_profit,1905432.0,thousand,USD,83.0,NET INCOME
+Monster,2025,interest_expense,,thousand,USD,,"not found; only interest and other income, net 63,175 shown; cash paid for interest 5,337"
+Monster,2025,total_assets,9988945.0,thousand,USD,82.0,Total Assets
+Monster,2025,total_equity,8254108.0,thousand,USD,82.0,Total stockholders' equity (no non-controlling interests shown)
+Monster,2025,cash,2088117.0,thousand,USD,82.0,Cash and cash equivalents
+Monster,2025,total_borrowings,,thousand,USD,,"Long-term debt is nil at 31 Dec 2025 (2024: 373,951); lease liabilities not shown on these pages; not found in full"
+Monster,2025,net_interest_bearing_debt,,thousand,USD,,not found
+Monster,2025,operating_cash_flow,2098177.0,thousand,USD,86.0,Net cash provided by operating activities
+Monster,2025,capex,-157529.0,thousand,USD,86.0,"Purchases of property and equipment (132,275) + Additions to intangibles (25,254)"
+Monster,2025,free_cash_flow,,thousand,USD,,"not company-reported; OCF 2,098,177 + capex (157,529) = 1,940,648 for comparability"
+Monster,2025,employees,,count,,,not found
+Monster,2025,volume_total,,million hl,,,not found
+Monster,2025,organic_volume_growth,,percent,,,not found
+Monster,2025,organic_revenue_growth,,percent,,,not found
+Monster,2025,organic_operating_profit_growth,,percent,,,not found
+Monster,2025,gross_profit,4632195.0,thousand,USD,83.0,GROSS PROFIT
+Monster,2025,sales_distribution_expenses,,thousand,USD,,"not found separately; only total OPERATING EXPENSES 2,212,841 on income statement"
+Monster,2025,special_items,,thousand,USD,,"not found as a line; impairments of goodwill/intangibles 38,411 and PP&E 12,029 shown in cash flow only"
+Monster,2025,operating_profit_adjusted,,thousand,USD,,not found

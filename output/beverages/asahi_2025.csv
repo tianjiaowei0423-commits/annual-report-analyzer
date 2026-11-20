@@ -1,0 +1,23 @@
+company,year,metric,value,unit,currency,page,note
+Asahi,2025,revenue,2894676.0,million,JPY,5.0,Revenue; no excise split shown
+Asahi,2025,ebitda,426084.0,million,JPY,9.0,"Not reported by company. Calculated: core operating profit 262,997 (p2) + depreciation and amortization 163,087 (p9). Reported-basis operating profit + D&A would be 348,957."
+Asahi,2025,ebit,185870.0,million,JPY,5.0,Operating Profit (after other operating income/expense incl. impairments)
+Asahi,2025,net_profit,122767.0,million,JPY,5.0,"Profit for the period, total incl. NCI (owners 121,574 + NCI 1,193)"
+Asahi,2025,interest_expense,21617.0,million,JPY,9.0,"'Interest expenses' in cash flow statement adjustments; no financial items note on these pages. Finance costs total 28,522 (p5) includes other items."
+Asahi,2025,total_assets,6028414.0,million,JPY,4.0,Total assets
+Asahi,2025,total_equity,3008543.0,million,JPY,4.0,"Total equity incl. NCI 5,491"
+Asahi,2025,cash,156380.0,million,JPY,4.0,"Cash and cash equivalents, balance sheet"
+Asahi,2025,total_borrowings,1644177.0,million,JPY,4.0,"Bonds and borrowings current 838,787 + non-current 805,390; lease liabilities sit within other financial liabilities and are not separately disclosed, so excluded"
+Asahi,2025,net_interest_bearing_debt,,million,JPY,,not found
+Asahi,2025,operating_cash_flow,104816.0,million,JPY,9.0,Net cash flows from operating activities
+Asahi,2025,capex,-154707.0,million,JPY,10.0,"Purchase of PP&E (123,540) + purchase of intangible assets (31,167)"
+Asahi,2025,free_cash_flow,,million,JPY,,"Not company-reported on these pages. OCF + capex = 104,816 - 154,707 = -49,891"
+Asahi,2025,employees,,count,,,not found
+Asahi,2025,volume_total,,million hl,,,not found
+Asahi,2025,organic_volume_growth,,percent,,,not found
+Asahi,2025,organic_revenue_growth,,percent,,,"not found as organic; only constant currency revenue growth (1.4%) on p2, which is not excl. acquisitions"
+Asahi,2025,organic_operating_profit_growth,,percent,,,not found as organic; only constant currency core operating profit growth (7.8%) on p2
+Asahi,2025,gross_profit,1092841.0,million,JPY,5.0,Gross Profit from income statement
+Asahi,2025,sales_distribution_expenses,-829843.0,million,JPY,5.0,"Selling, general and administrative expenses (combined line; no separate sales and distribution line)"
+Asahi,2025,special_items,,million,JPY,,"not found as a single line; other operating income 5,387 and other operating expense (82,515) shown, impairment losses 27,649"
+Asahi,2025,operating_profit_adjusted,262997.0,million,JPY,2.0,Core Operating Profit = Revenue - (COGS + SG&A); excludes other operating income/expense

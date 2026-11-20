@@ -1,0 +1,23 @@
+company,year,metric,value,unit,currency,page,note
+CCHBC,2025,revenue,11604.5,million,EUR,271.0,Net sales revenue (income statement); no excise split shown
+CCHBC,2025,ebitda,1807.5,million,EUR,311.0,"Comparable adjusted EBITDA (before restructuring, commodity hedging, acquisition costs, Russia-Ukraine); reported Adjusted EBITDA after these items 1,759.9"
+CCHBC,2025,ebit,1305.6,million,EUR,271.0,"Operating profit (reported, after special items); comparable EBIT 1,356.2"
+CCHBC,2025,net_profit,940.3,million,EUR,271.0,"Profit after tax, incl. non-controlling interests (owners 940.4)"
+CCHBC,2025,interest_expense,127.8,million,EUR,281.0,"Note 9 Interest expense (includes lease interest 20.0, per Note 16, and swap/swaption reclass); excludes other finance costs and FX"
+CCHBC,2025,total_assets,11599.3,million,EUR,272.0,Total assets
+CCHBC,2025,total_equity,3941.6,million,EUR,272.0,Total equity incl. NCI 97.0
+CCHBC,2025,cash,2541.7,million,EUR,272.0,Cash and cash equivalents balance sheet
+CCHBC,2025,total_borrowings,3913.0,million,EUR,318.0,"Total borrowings 805.6 current + 3,107.4 non-current, incl. leases 293.7"
+CCHBC,2025,net_interest_bearing_debt,1232.9,million,EUR,311.0,"Net debt (Note 25), company-reported, net of cash and financial assets/derivatives"
+CCHBC,2025,operating_cash_flow,1513.5,million,EUR,274.0,Net cash inflow from operating activities
+CCHBC,2025,capex,-752.6,million,EUR,274.0,"Payments for purchases of property, plant and equipment; no separate intangible purchases line"
+CCHBC,2025,free_cash_flow,700.0,million,EUR,2.0,"Company-reported free cash flow (highlights); OCF 1,513.5 + capex -752.6 = 760.9; company definition also nets lease repayments/interest etc."
+CCHBC,2025,employees,,count,,,"not found (only parent company FTE <50, not group)"
+CCHBC,2025,volume_total,2997.4,million unit cases,,2.0,"Total volume in million unit cases (2,997.4), as reported; not hl"
+CCHBC,2025,organic_volume_growth,2.8,percent,,357.0,Consolidated organic volume growth
+CCHBC,2025,organic_revenue_growth,8.1,percent,,357.0,Consolidated net sales revenue organic growth
+CCHBC,2025,organic_operating_profit_growth,11.5,percent,,357.0,"Comparable EBIT organic growth, consolidated"
+CCHBC,2025,gross_profit,4267.9,million,EUR,271.0,Gross profit
+CCHBC,2025,sales_distribution_expenses,,million,EUR,,"not found; only total Operating expenses (2,977.7) shown in income statement"
+CCHBC,2025,special_items,-52.0,million,EUR,355.0,"Pre-tax EBIT adjustments: restructuring 10 + commodity hedging (5) + acquisition costs 42 + Russia-Ukraine 3 = 50 add-back; net special items cost = -50 rounded (1,356-1,306)"
+CCHBC,2025,operating_profit_adjusted,1356.2,million,EUR,2.0,"Comparable EBIT; excludes restructuring, commodity hedging, acquisition costs, Russia-Ukraine conflict impact"
