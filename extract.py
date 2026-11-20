@@ -118,6 +118,17 @@ SECTOR_RULES = {
         "[free_cash_flow] If the report shows both a free cash flow before acquisitions (e.g. 'free "
         "operating cash flow') and one after acquisitions ('free cash flow'), take the one before "
         "acquisitions; give the other figure in note",
+        "[revenue] If the report shows revenue both before and after excise tax/duties, take the one AFTER "
+        "excise (Heineken: 'Net revenue'; Carlsberg: 'Revenue' below 'Excise duties'). This overrides the "
+        "general 'take Revenue' rule; give the other figure in note",
+        "[ebitda] Take EBITDA before special/exceptional items, as the company reports it (Carlsberg: "
+        "'EBITDA'; Heineken: 'EBITDA (beia)'). Give the reported EBITDA after these items in note",
+        "[organic_volume_growth, organic_revenue_growth, organic_operating_profit_growth] If a section says "
+        "that its growth % means organic growth (e.g. 'growth % ... indicates organic growth'), an unlabelled "
+        "growth rate in that section is the organic figure",
+        "[volume_total, organic_volume_growth] Some companies report volume in 'mhl' (million hectolitres) "
+        "and only beer volume in absolute terms; then take consolidated beer volume and say so in note. "
+        "Organic volume growth may be given only for total consolidated volume; take it and name the basis",
     ],
 }
 
@@ -173,13 +184,21 @@ SECTOR_SECTIONS = {
     "beverages": {
         "volumes_and_growth": {
             "titles": ["organic growth", "organic development", "key figures", "group performance",
-                       "volumes"],
+                       "volumes",
+                       # Heineken p.7: "Performance highlights" with "Consolidated beer volume 234.0mhl"
+                       "performance highlights"],
             "keys": ["million hl", "m hl", "acquisitions, net", "organic", "total volumes",
-                     "pro rata volumes"],
+                     "pro rata volumes",
+                     # Heineken: "234.0mhl", "in millions of hectolitres", "Total consolidated volume"
+                     "mhl", "millions of hectolitres", "total consolidated volume"],
             # regional pages repeat the same words; the group page is the one we want
-            "avoid": ["western europe", "asia", "central & eastern europe", "eastern europe and india"],
+            "avoid": ["western europe", "asia", "central & eastern europe", "eastern europe and india",
+                      ],
             "labels": ["volume", "revenue", "operating profit", "organic", "acquisition",
-                       "currency", "hl"],
+                       "currency", "hl", "beer volume", "consolidated volume"],
+            # Heineken: volume (p.7), its organic growth (p.48) and the growth table (p.47)
+            # sit on different pages
+            "pages": 5,
         },
         "special_items_note": {
             "notes_only": True,
@@ -195,7 +214,11 @@ SECTOR_SECTIONS = {
 SECTOR_SECTION_OVERRIDES = {
     "beverages": {
         # Carlsberg's five-year key figures page starts with a volume table
-        "key_figures": {"keys": ["total volume", "five-year"]},
+        "key_figures": {"keys": ["total volume", "five-year",
+                                 # Heineken key figures: "Net debt position"
+                                 "net debt"],
+                        # Heineken p.8: lines only on the key figures page itself
+                        "labels": ["net debt", "market capitalisation", "average number of employees"]},
         # US 10-K title (Monster), UK 'profit for the period' (A.G. Barr, 53-week year),
         # 'profit after tax' (Coca-Cola HBC, CCEP); labels help when the title is read late
         "income_statement": {"titles": ["statements of income", "statement of income"],
@@ -238,7 +261,7 @@ def set_sector(sector: str) -> None:
     for name, change in SECTOR_SECTION_OVERRIDES.get(sector, {}).items():
         merged = dict(CORE_SECTIONS[name])
         for key, words in change.items():
-            merged[key] = list(merged.get(key, [])) + words
+            merged[key] = (list(merged.get(key, [])) + words if isinstance(words, list) else words)
         SECTIONS[name] = merged
     SETTINGS["toc_exempt_dense"] = TOC_EXEMPT_DENSE.get(sector, False)
     SETTINGS["note_alone"] = NOTE_ALONE.get(sector, False)
@@ -417,7 +440,7 @@ def locate_pages(pages: list[str]) -> tuple[dict[str, list[tuple[int, float]]], 
     found["employees_note"] = rank(SECTIONS["employees_note"], PAGES_PER_SECTION, anchor, notes_only=True)
     for name, section in SECTIONS.items():  # sector sections
         if name not in CORE_SECTIONS:
-            found[name] = rank(section, PAGES_PER_SECTION, anchor,
+            found[name] = rank(section, section.get("pages", PAGES_PER_SECTION), anchor,
                                notes_only=section.get("notes_only", False))
     return found, parent_start
 

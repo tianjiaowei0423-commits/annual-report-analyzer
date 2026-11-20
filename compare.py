@@ -1,4 +1,4 @@
-""""
+"""
 Compare the model's extraction (output/<company>_2025.csv) with the
 hand-made ground truth (data/ground_truth.xlsx, sheet "ground_truth").
 
@@ -9,6 +9,8 @@ Two checks per metric:
                  (the same figure often appears on several pages, so this is fairer
                  than requiring the exact page in the ground truth)
 page_same (same page as the ground truth) is still saved, for reference.
+When the answer key has no value (the report does not show the metric, e.g. no gross profit
+line) and the model also returns none, both checks count as correct: they agree it is absent.
 
 Prior year (--year 2024): there is a hand-made answer key only where ground_truth.xlsx has
 rows for that year; for the rest only the page check runs. Both years are printed on the same
@@ -123,13 +125,15 @@ def compare(company: str, truth: pd.DataFrame, year: int) -> pd.DataFrame | None
 
     v_t = pd.to_numeric(merged["value_truth"], errors="coerce")
     v_m = pd.to_numeric(merged["value_model"], errors="coerce")
-    merged["value_ok"] = (v_t - v_m).abs() <= TOLERANCE
+    both_absent = v_t.isna() & v_m.isna() & (not t.empty)
+    merged["value_ok"] = ((v_t - v_m).abs() <= TOLERANCE) | both_absent
     merged["page_same"] = (pd.to_numeric(merged["page_truth"], errors="coerce")
                            == pd.to_numeric(merged["page_model"], errors="coerce"))
 
     pages = read_pages(REPORTS_DIR / COMPANIES[company]["file"])
     merged["page_verified"] = [verify_page(r.value_model, r.page_model, r.note, pages)
                                for r in merged.itertuples()]
+    merged["page_verified"] = merged["page_verified"] | both_absent  # nothing to show on a page
 
     # Prior year: both columns are printed on the same page, so the page check cannot tell
     # them apart. A value identical to the report-year value suggests the wrong column.

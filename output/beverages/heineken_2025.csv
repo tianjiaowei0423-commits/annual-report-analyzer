@@ -1,0 +1,23 @@
+company,year,metric,value,unit,currency,page,note
+Heineken,2025,revenue,28753.0,million,EUR,84.0,"'Net revenue' (after excise tax) IFRS. Revenue before excise is 34,257; net revenue (beia) 28,890"
+Heineken,2025,ebitda,6560.0,million,EUR,47.0,"EBITDA (beia); reported EBITDA after exceptional items is 6,270. Includes share of profit of associates/JVs"
+Heineken,2025,ebit,3406.0,million,EUR,84.0,Operating profit (after exceptional items and amortisation of acquisition-related intangibles)
+Heineken,2025,net_profit,2138.0,million,EUR,84.0,"Profit (group total incl. NCI 253); attributable to shareholders 1,885"
+Heineken,2025,interest_expense,620.0,million,EUR,84.0,'Interest expenses' on income statement (shown as (620)); note 11.1 breakdown not in pages; excludes interest income and other net finance items
+Heineken,2025,total_assets,53753.0,million,EUR,85.0,Total assets
+Heineken,2025,total_equity,20614.0,million,EUR,85.0,"Total equity incl. NCI 2,636"
+Heineken,2025,cash,4773.0,million,EUR,85.0,"Cash and cash equivalents on balance sheet (cash flow statement total 4,312 net of overdrafts)"
+Heineken,2025,total_borrowings,19279.0,million,EUR,85.0,"Non-current borrowings 16,191 + current borrowings 3,088 (borrowings per balance sheet; company definition of total borrowings)"
+Heineken,2025,net_interest_bearing_debt,14479.0,million,EUR,8.0,'Net debt position' as reported in key figures
+Heineken,2025,operating_cash_flow,5012.0,million,EUR,86.0,Cash flow from operating activities
+Heineken,2025,capex,-2402.0,million,EUR,86.0,"Purchase of PP&E (2,133) + purchase of intangible assets (269)"
+Heineken,2025,free_cash_flow,2602.0,million,EUR,86.0,"Company-reported 'Free operating cash flow' (after operational investing incl. loans to customers, before acquisitions/disposals); OCF + capex = 5,012 - 2,402 = 2,610"
+Heineken,2025,employees,87870.0,count,,96.0,"Average number of employees (FTE), excluding contractors"
+Heineken,2025,volume_total,234.0,million hl,,7.0,Consolidated beer volume only; total consolidated volume (beer+non-beer) not on given pages
+Heineken,2025,organic_volume_growth,-2.1,percent,,48.0,"Total consolidated volume decreased by 2.1% (organic, excl. consolidation changes)"
+Heineken,2025,organic_revenue_growth,1.6,percent,,47.0,Net revenue organic growth %; (revenue before excise organic 0.2%)
+Heineken,2025,organic_operating_profit_growth,4.4,percent,,47.0,Operating profit (beia) organic growth %
+Heineken,2025,gross_profit,,million,EUR,,not found; no gross profit line in income statement
+Heineken,2025,sales_distribution_expenses,-2855.0,million,EUR,47.0,"Marketing and selling expenses (reported); beia (2,849)"
+Heineken,2025,special_items,-979.0,million,EUR,47.0,"Operating profit eia adjustment (4,385 beia - 3,406 reported); includes exceptional items AND amortisation of acquisition-related intangibles; split not on given pages"
+Heineken,2025,operating_profit_adjusted,4385.0,million,EUR,47.0,Operating profit (beia): before exceptional items and amortisation of acquisition-related intangible assets

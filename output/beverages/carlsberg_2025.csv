@@ -1,0 +1,23 @@
+company,year,metric,value,unit,currency,page,note
+Carlsberg,2025,revenue,89095.0,million,DKK,102,"Revenue (income statement; Carlsberg revenue is reported net of excise, no other figure shown)"
+Carlsberg,2025,ebitda,18784.0,million,DKK,105,"Operating profit before depreciation, amortisation and impairment losses (EBITDA), before special items; EBITDA after special items not reported"
+Carlsberg,2025,ebit,11430.0,million,DKK,102,"Operating profit before special items 13,356 + special items, net -1,926 = 11,430"
+Carlsberg,2025,net_profit,6978.0,million,DKK,102,"Profit for the period (incl. non-controlling interests 1,023; shareholders' share 5,955)"
+Carlsberg,2025,interest_expense,2411.0,million,DKK,135,"Interest expenses 2,319 + Interest expenses, lease liabilities 92; excludes capitalised, FX, pension, bank fees"
+Carlsberg,2025,total_assets,153955.0,million,DKK,103,Total assets 31 Dec 2025
+Carlsberg,2025,total_equity,30676.0,million,DKK,103,"Total equity incl. non-controlling interests 2,872"
+Carlsberg,2025,cash,9585.0,million,DKK,103,"Cash and cash equivalents, balance sheet (cash flow statement shows 9,551 net of overdrafts)"
+Carlsberg,2025,total_borrowings,70623.0,million,DKK,103,"Non-current borrowings 61,452 + current borrowings 9,171 (include lease liabilities per section 4.6/4.7.1)"
+Carlsberg,2025,net_interest_bearing_debt,61617.0,million,DKK,15,NIBD as reported in 5-year key figures (section 4.6 definition)
+Carlsberg,2025,operating_cash_flow,12431.0,million,DKK,105,Cash flow from operating activities
+Carlsberg,2025,capex,-5592.0,million,DKK,105,"Acquisition of PP&E -4,924 + acquisition of intangible assets -668; excludes disposals and acquisitions of subsidiaries"
+Carlsberg,2025,free_cash_flow,7011.0,million,DKK,105,"Free operating cash flow (before acquisitions) = OCF 12,431 less total operational investments 5,420; reported Free cash flow after acquisitions (OCF less investing CF) is -21,667. OCF + gross capex = 6,839. Leases not deducted"
+Carlsberg,2025,employees,36964.0,count,,158,"Average number of employees (average basis, not FTE-specified)"
+Carlsberg,2025,volume_total,148.0,million hl,,15,Total volume: beer 99.0 + soft drinks and other beverages 49.0
+Carlsberg,2025,organic_volume_growth,-2.0,percent,,23,Total volume organic growth -2.0% (excl. San Miguel -0.6%)
+Carlsberg,2025,organic_revenue_growth,-0.6,percent,,23,Revenue organic growth; reported +18.8%
+Carlsberg,2025,organic_operating_profit_growth,5.0,percent,,23,Operating profit (MPM) organic growth
+Carlsberg,2025,gross_profit,40236.0,million,DKK,102,"Gross profit, income statement"
+Carlsberg,2025,sales_distribution_expenses,-23128.0,million,DKK,102,Sales and distribution expenses
+Carlsberg,2025,special_items,-1926.0,million,DKK,102,"Special items, net (before tax)"
+Carlsberg,2025,operating_profit_adjusted,13996.0,million,DKK,23,"Operating profit before special items (MPM): adds back 640 amortisation of intangibles recognised in Britvic PPA; reported operating profit before special items is 13,356"
